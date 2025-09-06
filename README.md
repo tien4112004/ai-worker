@@ -1,5 +1,28 @@
 # ai-worker
 
+## Requirements
+- Python 3.10+
+- pip (or pip3)
+
+## Setup
+- Prepare virtual environment (optional but recommended)
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+```
+
+- Install dependencies
+```bash
+git clone
+cd ai-worker
+pip install -r requirements.txt
+```
+
+- Prepare environment variables
+```bash
+cp .env.sample .env
+# Edit .env file to add your API keys and configurations
+```
 
 ## How to run
 
@@ -21,4 +44,33 @@ curl -X POST "http://localhost:8080/api/v1/outline/generate"
     "language": "vi",
     "targetAge": "5-10"
     }'
+```
+
+## Folder structure
+
+```bash
+.
+├── app
+│   ├── api
+│   │   ├── endpoints
+│   │   │   ├── generate.py
+│   │   │   └── __pycache__
+│   │   ├── __pycache__
+│   │   │   └── router.cpython-310.pyc
+│   │   └── router.py
+│   ├── core
+│   │   ├── config.py
+│   │   └── depends.py
+│   ├── llms
+│   │   ├── factory.py
+│   │   └── service.py
+│   ├── main.py
+│   ├── schemas
+│   │   ├── image_content.py
+│   │   └── slide_content.py
+│   └── services
+│       └── content_service.py
+├── README.md
+├── requirements.txt
+└── tests
 ```

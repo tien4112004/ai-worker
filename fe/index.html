@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <button onclick="callStreaming()">Streaming Response</button>
+    <button onclick="callBatch()">Batch Response</button>
+
+    <script>
+        function callStreaming() {
+            fetch('http://localhost:8080/api/v1/outline/generate/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    "topic": "Introduction to Tắt đèn of Ngô Tất Tố",
+                    "slide_count": 5,
+                    "audience": "primary students",
+                    "model": "gemini-2.5-flash-lite",
+                    "learning_objective": "",
+                    "language": "Vietnamese",
+                    "targetAge": "5-10"
+                })
+            })
+                .then(res => res.text())
+                .then(console.log)
+                .catch(err => console.error('Streaming error:', err));
+        }
+
+        function callBatch() {
+            fetch('http://localhost:8080/api/v1/outline/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    "topic": "Introduction to Tắt đèn of Ngô Tất Tố",
+                    "slide_count": 5,
+                    "audience": "primary students",
+                    "model": "gemini-2.5-flash-lite",
+                    "learning_objective": "",
+                    "language": "Vietnamese",
+                    "targetAge": "5-10"
+                })
+            })
+                .then(res => res.text())
+                .then(console.log)
+                .catch(err => console.error('Batch error:', err));
+        }
+    </script>
+</body>
+
+</html>
