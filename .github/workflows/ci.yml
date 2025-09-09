@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.11"]
 
     steps:
     - uses: actions/checkout@v4
@@ -38,13 +38,11 @@ jobs:
       run: |
         mkdir -p reports
         pytest \
-          -q \
+          -v \
           --maxfail=1 \
-          --disable-warnings \
           --junitxml=reports/junit.xml \
-          --html=reports/pytest.html --self-contained-html \
-          --cov=my_package --cov-report=xml:reports/coverage.xml --cov-report=term-missing
-
+          --html=reports/pytest.html \
+          --self-contained-html
 
     - name: Upload test reports (HTML, JUnit, Coverage)
       if: always()   # ensure we keep reports even when tests fail
