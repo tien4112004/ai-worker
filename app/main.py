@@ -1,36 +1,37 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
 from app.api.router import api
-from app.llms.factory import LLMFactory
-from app.llms.service import LLMService
+from app.core.config import settings
+from app.llms.executor import LLMExecutor
+from app.prompts.loader import PromptStore
 from app.services.content_service import ContentService
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup code can go here
-    llm_factory = LLMFactory({
-        "temperature": settings.llm_temperature,
-        "max_tokens": settings.llm_max_tokens
-    })
-    llm_service = LLMService(llm_factory=llm_factory)
-    content_service = ContentService(model_name=settings.default_model, llm_service=llm_service)
-    
+    prompt_store = PromptStore()
+    llm_executor = LLMExecutor()
+    content_service = ContentService(
+        llm_executor=llm_executor, prompt_store=prompt_store
+    )
+
     app.state.settings = settings
     app.state.content_service = content_service
 
     yield
     # Shutdown code can go here
 
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         swagger_ui_parameters={"syntaxHighlight.theme": "obsidian"},
-        lifespan=lifespan
+        lifespan=lifespan,
     )
-    
+
     app.include_router(api, prefix="/api/v1")
     app.add_middleware(
         CORSMiddleware,
@@ -41,5 +42,6 @@ def create_app() -> FastAPI:
     )
 
     return app
+
 
 app = create_app()

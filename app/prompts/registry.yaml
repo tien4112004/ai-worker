@@ -1,0 +1,7 @@
+prompts:
+  outline.system:
+    path: "outline/sys_prompt.st"
+    format: "st"
+  slide.system:
+    path: "slide/sys_prompt.st"
+    format: "st"

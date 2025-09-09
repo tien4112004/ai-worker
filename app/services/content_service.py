@@ -1,85 +1,117 @@
-from app.schemas.slide_content import OutlineGenerateRequest
-from app.llms.service import LLMService
+from typing import Any, Dict
+
+from app.llms.executor import LLMExecutor
+from app.prompts.loader import PromptStore
 from app.repositories.llm_result_repository import llm_result_repository
+from app.schemas.slide_content import OutlineGenerateRequest
 
 
 class ContentService:
-    def __init__(self, model_name: str, llm_service: LLMService):
-        self.model_name = model_name
-        self.llm_service = llm_service
+    def __init__(self, llm_executor: LLMExecutor, prompt_store: PromptStore):
+        self.llm_executor = llm_executor or LLMExecutor()
+        self.prompt_store = prompt_store or PromptStore()
 
-    def make_slide(self, topic: str):
+    def _system(self, key: str, vars: Dict[str, Any]) -> str:
+        return self.prompt_store.render(key, vars)
+
+    def make_slide_stream(self, topic: str):
         """Generate slide content using LLM and save result."""
-        prompt = f"Generate slide content for topic: {topic}"
-        result = self.llm_service.generate_slide_content(topic)
-        
-        # Save to repository
-        # result_id = llm_result_repository.save_result(
-        #     prompt=prompt,
-        #     response=result,
-        #     model=self.model_name,
-        #     metadata={"type": "slide", "topic": topic}
-        # )
-        
+        system_prompt = self._system(
+            "slide.system",
+            {
+                "topic": topic,
+            },
+        )
+
+        result = self.llm_executor.stream(
+            provider="gemini",
+            model="gemini-1.5-flash",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": f"Create slide content for the topic: {topic}.",
+                },
+            ],
+        )
+
+        return result
+
+    def make_outline_stream(self, request: OutlineGenerateRequest):
+        system_prompt = self._system(
+            "outline.system",
+            {
+                "topic": request.topic,
+                "language": request.language,
+                "slide_count": request.slide_count,
+            },
+        )
+
+        result = self.llm_executor.stream(
+            provider="gemini",
+            model=request.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": f"Generate an outline for a presentation on the topic: {request.topic}. The presentation should be in {request.language} and consist of {request.slide_count} slides.",
+                },
+            ],
+        )
+
+        return result
+
+    def make_presentation(self, topic: str):
+        sys_msg = self._system(
+            "outline.system",
+            {
+                "topic": topic,
+                "language": "English",
+                "slide_count": 5,
+            },
+        )
+
+        outline = """1. Introduction to the topic
+2. Key concepts and definitions
+3. In-depth analysis and discussion
+4. Case studies or examples
+5. Conclusion and future directions
+"""
+
+        result = self.llm_executor.batch(
+            provider="openai",
+            model="gemini-1.5-flash",
+            messages=[
+                {"role": "system", "content": sys_msg},
+                {
+                    "role": "user",
+                    "content": f"Create slide content for the topic: {topic} based on the following outline:\n{outline}",
+                },
+            ],
+        )
+
         return result
 
     def make_outline(self, request: OutlineGenerateRequest):
-        """Generate outline using LLM with full request parameters and save result."""
-        prompt = f"Generate outline for topic: {request.topic}"
-        metadata = {
-            "type": "outline",
-            "topic": request.topic,
-            "slide_count": request.slide_count,
-            "learning_objective": request.learning_objective,
-            "target_age": request.targetAge,
-            "language": request.language
-        }
-        
-        if hasattr(request, 'slide_count') and hasattr(request, 'learning_objective') and hasattr(request, 'targetAge'):
-            # Generate detailed slide content if all parameters are available
-            # result = self.llm_service.generate_slide_content(
-            #     topic=request.topic,
-            #     slide_count=request.slide_count,
-            #     learning_objective=request.learning_objective,
-            #     target_age=request.targetAge
-            # )
-            result = """I. Introduction to {request.topic}
-A. Definition and scope
-B. Importance and relevance 
-II. Main Concepts
-A. Key principles
-B. Core components
-III. Practical Applications
-A. Real-world examples
-B. Case studies
-IV. Conclusion
-A. Summary of key points
-B. Future considerations
-            """
-            prompt = f"Generate {request.slide_count} slides for topic: {request.topic} with language is {request.language}, learning objective: {request.learning_objective}, target age: {request.targetAge}"
-        else:
-            # Fall back to simple outline
-            # result = self.llm_service.generate_outline(request.topic)
-            result = """I. Introduction to {request.topic}
-A. Definition and scope
-B. Importance and relevance 
-II. Main Concepts
-A. Key principles
-B. Core components
-III. Practical Applications
-A. Real-world examples
-B. Case studies
-IV. Conclusion
-A. Summary of key points
-B. Future considerations
-            """
+        system_prompt = self._system(
+            "outline.system",
+            {
+                "topic": request.topic,
+                "language": request.language,
+                "slide_count": request.slide_count,
+            },
+        )
 
-        # Save to repository
-        # result_id = llm_result_repository.save_result(
-        #     prompt=prompt,
-        #     response=result,
-        #     model=self.model_name,
-        #     metadata=metadata
-        # )
-        
+        result = self.llm_executor.batch(
+            provider="gemini",
+            model=request.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": f"Generate an outline for a presentation on the topic: {request.topic}. The presentation should be in {request.language} and consist of {request.slide_count} slides.",
+                },
+            ],
+        )
+
         return result
