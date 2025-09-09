@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  ai-worker:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_NAME=ai-worker
+      - DEFAULT_MODEL=gemini-2.5-flash-lite
+      - LLM_TEMPERATURE=0.7
+      - LLM_MAX_TOKENS=2048
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+      - ALLOWED_CREDENTIALS=true
+      - ALLOWED_METHODS=*
+      - ALLOWED_HEADERS=*
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app/app:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  redis_data:
