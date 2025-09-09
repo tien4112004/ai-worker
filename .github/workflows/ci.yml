@@ -34,9 +34,12 @@ jobs:
     - name: Run tests
       run: pytest tests/ -v --tb=short --junit-xml=test-results.xml
 
-    - name: Publish Test Report
-      uses: ctrf-io/github-test-reporter@v1
+    - name: Surface failing tests
+      if: always()
+      uses: pmeier/pytest-results-action@main
       with:
-        report-path: './ctrf/*.json'
-        github-report: true
-    if: always()
+        path: test-results.xml
+        summary: true
+        display-options: fEX
+        fail-on-empty: true
+        title: Test results
