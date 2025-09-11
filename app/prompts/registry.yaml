@@ -2,6 +2,12 @@ prompts:
   outline.system:
     path: "outline/sys_prompt.st"
     format: "st"
-  slide.system:
-    path: "slide/sys_prompt.st"
+  outline.user:
+    path: "outline/usr_prompt.st"
+    format: "st"
+  presentation.system:
+    path: "presentation/sys_prompt.st"
+    format: "st"
+  presentation.user:
+    path: "presentation/usr_prompt.st"
     format: "st"

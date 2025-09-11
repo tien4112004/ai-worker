@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class ImageGenerateRequest(BaseModel):
     prompt: str
     sample_count: int
@@ -7,6 +8,7 @@ class ImageGenerateRequest(BaseModel):
     safety_filter_level: str
     person_generation: str
     seed: int
+
 
 class ImageGenerateResponse(BaseModel):
     image_uri: str
