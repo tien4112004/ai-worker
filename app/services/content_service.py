@@ -39,7 +39,7 @@ class ContentService:
                 "language": request.language,
                 "slide_count": request.slide_count,
                 "learning_objective": request.learning_objective,
-                "targetAge": request.targetAge,
+                "target_age": request.target_age,
             },
         )
 
@@ -69,7 +69,7 @@ class ContentService:
                 "language": request.language,
                 "slide_count": request.slide_count,
                 "learning_objective": request.learning_objective,
-                "targetAge": request.targetAge,
+                "target_age": request.target_age,
                 "outline": request.outline,
             },
         )
@@ -99,7 +99,7 @@ class ContentService:
                 "language": request.language,
                 "slide_count": request.slide_count,
                 "learning_objective": request.learning_objective,
-                "targetAge": request.targetAge,
+                "target_age": request.target_age,
             },
         )
 

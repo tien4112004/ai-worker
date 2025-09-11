@@ -11,7 +11,7 @@ class OutlineGenerateRequest(BaseModel):
     language: str
     slide_count: int
     learning_objective: str
-    targetAge: str
+    target_age: str
 
 
 class OutlineGenerateResponse(BaseModel):
@@ -25,5 +25,5 @@ class PresentationGenerateRequest(BaseModel):
     language: str
     slide_count: int
     learning_objective: str
-    targetAge: str
+    target_age: str
     outline: str
