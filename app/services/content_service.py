@@ -34,13 +34,7 @@ class ContentService:
 
         user_prompt = self._system(
             "presentation.user",
-            {
-                "outline": request.outline,
-                "language": request.language,
-                "slide_count": request.slide_count,
-                "learning_objective": request.learning_objective,
-                "target_age": request.target_age,
-            },
+            request.to_dict(),
         )
 
         result = self.llm_executor.stream(
@@ -64,14 +58,7 @@ class ContentService:
         """
         sys_msg = self._system(
             "outline.system",
-            {
-                "topic": request.outline,
-                "language": request.language,
-                "slide_count": request.slide_count,
-                "learning_objective": request.learning_objective,
-                "target_age": request.target_age,
-                "outline": request.outline,
-            },
+            request.to_dict(),
         )
 
         result = self.llm_executor.batch(
@@ -94,13 +81,7 @@ class ContentService:
 
         user_prompt = self._system(
             "outline.user",
-            {
-                "topic": request.topic,
-                "language": request.language,
-                "slide_count": request.slide_count,
-                "learning_objective": request.learning_objective,
-                "target_age": request.target_age,
-            },
+            request.to_dict(),
         )
 
         result = self.llm_executor.stream(
@@ -123,11 +104,7 @@ class ContentService:
         """
         system_prompt = self._system(
             "outline.system",
-            {
-                "topic": request.topic,
-                "language": request.language,
-                "slide_count": request.slide_count,
-            },
+            request.to_dict(),
         )
 
         result = self.llm_executor.batch(
