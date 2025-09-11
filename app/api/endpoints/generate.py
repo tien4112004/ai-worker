@@ -6,7 +6,7 @@ from app.schemas.slide_content import (
     OutlineGenerateRequest,
     PresentationGenerateRequest,
 )
-from app.utils.server_side_event import sse_json_by_json, sse_word_by_word
+from app.utils.server_sent_event import sse_json_by_json, sse_word_by_word
 
 router = APIRouter(tags=["generate"])
 
