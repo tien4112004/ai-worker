@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
+from httpcore import Response
 
 from app.depends import ContentServiceDep
 from app.schemas.slide_content import (
