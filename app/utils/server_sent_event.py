@@ -6,20 +6,14 @@ from typing import Any, Generator
 
 async def sse_word_by_word(request, generator: Generator[Any, Any, None]):
     print("Starting SSE word by word")
-    print("Generator:", generator)
     if await request.is_disconnected():
         print("Client disconnected")
         return
     # Each chunk is a statement, split it word by word
     for chunk in generator:
         if chunk != "":
-            words = chunk.split()
-            for word in words:
-                yield f"{word} "
-                await asyncio.sleep(0.05)  # Delay between words
-            # Preserve newlines from original chunk
-            if chunk.endswith("\n"):
-                yield "\n"
+            yield f"{chunk}"
+            await asyncio.sleep(0.005)
 
     yield "\n\n[DONE]"
 

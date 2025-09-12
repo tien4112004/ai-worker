@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
+from httpcore import Response
 
 from app.depends import ContentServiceDep
 from app.schemas.slide_content import (
@@ -59,7 +60,7 @@ def generatePresentation_Stream(
 def generateOutline_Mock(
     svc: ContentServiceDep, outlineGenerateRequest: OutlineGenerateRequest
 ) -> str:
-    result = svc.make_outline_mock()
+    result = svc.make_outline_mock(outlineGenerateRequest)
     return result
 
 
@@ -81,7 +82,8 @@ def generatePresentation_Mock(
     svc: ContentServiceDep,
     presentationGenerateRequest: PresentationGenerateRequest,
 ):
-    result = svc.make_presentation_mock()
+    print("Received mock stream request:", presentationGenerateRequest)
+    result = svc.make_presentation_mock(presentationGenerateRequest)
     return result
 
 
@@ -91,8 +93,8 @@ def generatePresentation_Mock_Stream(
     presentationGenerateRequest: PresentationGenerateRequest,
     svc: ContentServiceDep,
 ):
+    print("Received mock stream request:", presentationGenerateRequest)
     result = svc.make_presentation_stream_mock()
-    print("Result from mock stream:", result)
     return StreamingResponse(
         sse_json_by_json(request, result), media_type="text/event-stream"
     )
