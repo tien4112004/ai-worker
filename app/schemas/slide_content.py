@@ -1,24 +1,47 @@
 import uuid
+
 from pydantic import BaseModel, Field, field_validator
 
+
+# Request and Response models for outline generation
 class OutlineGenerateRequest(BaseModel):
     topic: str
     model: str
+    provider: str
     language: str
     slide_count: int
     learning_objective: str
-    targetAge: str
+    target_age: str
 
-class OutlineGenerateResponse(BaseModel):
-    result: str
+    def to_dict(self):
+        return {
+            "topic": self.topic,
+            "model": self.model,
+            "provider": self.provider,
+            "language": self.language,
+            "slide_count": self.slide_count,
+            "learning_objective": self.learning_objective,
+            "target_age": self.target_age,
+        }
 
-class User(BaseModel):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    name: str
-    email: str
 
-    @field_validator('email')
-    def validate_email(cls, v):
-        if '@' not in v:
-            raise ValueError('Invalid email address')
-        return v
+# Request and Response models for presentation generation
+class PresentationGenerateRequest(BaseModel):
+    model: str
+    provider: str
+    language: str
+    slide_count: int
+    learning_objective: str
+    target_age: str
+    outline: str
+
+    def to_dict(self):
+        return {
+            "model": self.model,
+            "provider": self.provider,
+            "language": self.language,
+            "slide_count": self.slide_count,
+            "learning_objective": self.learning_objective,
+            "target_age": self.target_age,
+            "outline": self.outline,
+        }

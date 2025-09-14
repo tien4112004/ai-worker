@@ -32,7 +32,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    app.include_router(api, prefix="/api/v1")
+    app.include_router(api, prefix="/api")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,

@@ -1,41 +1,100 @@
-import asyncio
-from collections.abc import Iterator
-from typing import Annotated, Any, Generator
-
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import StreamingResponse
-from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from fastapi.responses import PlainTextResponse, StreamingResponse
+from httpcore import Response
 
 from app.depends import ContentServiceDep
-from app.schemas.slide_content import OutlineGenerateRequest
-from app.services.content_service import ContentService
+from app.schemas.slide_content import (
+    OutlineGenerateRequest,
+    PresentationGenerateRequest,
+)
+from app.utils.server_sent_event import sse_json_by_json, sse_word_by_word
 
 router = APIRouter(tags=["generate"])
 
 
 @router.post("/outline/generate")
-def generateOutline(payload: OutlineGenerateRequest, svc: ContentServiceDep):
-    result = svc.make_outline(payload)
+def generateOutline(
+    outlineGenerateRequest: OutlineGenerateRequest, svc: ContentServiceDep
+):
+    result = svc.make_outline(outlineGenerateRequest)
     return result
-
-
-async def sse(request, generator: Generator[Any, Any, None]):
-    if await request.is_disconnected():
-        print("Client disconnected")
-        return
-    for chunk in generator:
-        content = chunk.content
-        if content != "":
-            yield f"{content} "
-        await asyncio.sleep(0.1)  # Delay between words
 
 
 @router.post("/outline/generate/stream")
 def generateOutline_Stream(
-    request: Request, payload: OutlineGenerateRequest, svc: ContentServiceDep
+    request: Request,
+    outlineGenerateRequest: OutlineGenerateRequest,
+    svc: ContentServiceDep,
 ):
-    result = svc.make_outline_stream(payload)
+    result = svc.make_outline_stream(outlineGenerateRequest)
 
     return StreamingResponse(
-        sse(request, result), media_type="text/event-stream"
+        sse_word_by_word(request, result), media_type="text/event-stream"
+    )
+
+
+@router.post("/presentations/generate")
+def generatePresentation(
+    presentationGenerateRequest: PresentationGenerateRequest,
+    svc: ContentServiceDep,
+):
+    result = svc.make_presentation(presentationGenerateRequest)
+    return result
+
+
+@router.post("/presentations/generate/stream")
+def generatePresentation_Stream(
+    request: Request,
+    presentationGenerateRequest: PresentationGenerateRequest,
+    svc: ContentServiceDep,
+):
+    result = svc.make_presentation_stream(presentationGenerateRequest)
+
+    return StreamingResponse(
+        sse_json_by_json(request, result), media_type="text/event-stream"
+    )
+
+
+# Mock endpoints for testing without LLM calls
+@router.post("/outline/generate/mock")
+def generateOutline_Mock(
+    svc: ContentServiceDep, outlineGenerateRequest: OutlineGenerateRequest
+) -> str:
+    result = svc.make_outline_mock(outlineGenerateRequest)
+    return result
+
+
+@router.post("/outline/generate/stream/mock")
+def generateOutline_Mock_Stream(
+    request: Request,
+    outlineGenerateRequest: OutlineGenerateRequest,
+    svc: ContentServiceDep,
+):
+    result = svc.make_outline_stream_mock()
+
+    return StreamingResponse(
+        sse_word_by_word(request, result), media_type="text/event-stream"
+    )
+
+
+@router.post("/presentations/generate/mock")
+def generatePresentation_Mock(
+    svc: ContentServiceDep,
+    presentationGenerateRequest: PresentationGenerateRequest,
+):
+    print("Received mock stream request:", presentationGenerateRequest)
+    result = svc.make_presentation_mock(presentationGenerateRequest)
+    return result
+
+
+@router.post("/presentations/generate/stream/mock")
+def generatePresentation_Mock_Stream(
+    request: Request,
+    presentationGenerateRequest: PresentationGenerateRequest,
+    svc: ContentServiceDep,
+):
+    print("Received mock stream request:", presentationGenerateRequest)
+    result = svc.make_presentation_stream_mock()
+    return StreamingResponse(
+        sse_json_by_json(request, result), media_type="text/event-stream"
     )

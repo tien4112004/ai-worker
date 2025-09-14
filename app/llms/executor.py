@@ -4,7 +4,7 @@ from app.llms.adaper.text_models.openai import OpenAIAdapter
 
 class LLMExecutor:
     def __init__(self) -> None:
-        self.adapters = {"openai": OpenAIAdapter, "gemini": GeminiAdapter}
+        self.adapters = {"openai": OpenAIAdapter, "google": GeminiAdapter}
 
     def _adapter(self, provider: str):
         if provider in self.adapters:
