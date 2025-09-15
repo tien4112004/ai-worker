@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List
+from typing import List
 
 from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
@@ -10,7 +10,7 @@ class OpenAIAdapter:
         self.client = ChatOpenAI(model=model_name, **params)
 
     def run(self, model: str, messages: List[BaseMessage], **params) -> str:
-        resp = self.client.batch(model=model, messages=messages, **params)
+        resp = self.client.invoke(input=messages, **params).content
 
         if isinstance(resp, list):
             return " ".join(str(item) for item in resp)
@@ -18,7 +18,7 @@ class OpenAIAdapter:
         return resp
 
     async def stream(self, model: str, messages: List[BaseMessage], **params):
-        resp = self.client.stream(model=model, messages=messages, **params)
+        resp = self.client.stream(input=messages, **params)
 
         for chunk in resp:
             yield chunk.content

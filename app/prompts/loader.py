@@ -104,8 +104,6 @@ class PromptStore:
         text = self._load_text(spec.path)
         merged = {**self._load_defaults(spec), **vars}
 
-        print(f"Rendering prompt '{key}' with variables: {merged}")
-
         # add partials (e.g., ${safety_rules}) as simple include
         safety_path = self.base / "common/safety.st"
         if safety_path.exists():
@@ -114,6 +112,5 @@ class PromptStore:
             )
 
         rendered_text = Template(text).substitute(**merged)
-        print(f"Prompt text before rendering:\n{rendered_text}")
 
         return rendered_text

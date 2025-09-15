@@ -1,10 +1,15 @@
 from app.llms.adaper.text_models.gemini import GeminiAdapter
+from app.llms.adaper.text_models.open_router import OpenRouterAdapter
 from app.llms.adaper.text_models.openai import OpenAIAdapter
 
 
 class LLMExecutor:
     def __init__(self) -> None:
-        self.adapters = {"openai": OpenAIAdapter, "google": GeminiAdapter}
+        self.adapters = {
+            "openai": OpenAIAdapter,
+            "google": GeminiAdapter,
+            "openrouter": OpenRouterAdapter,
+        }
 
     def _adapter(self, provider: str):
         if provider in self.adapters:
