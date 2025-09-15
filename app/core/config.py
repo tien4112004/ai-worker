@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     )  # Alternative name for Gemini API key
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+    max_retries: int = int(os.getenv("MAX_RETRIES", 3))
 
     # Default LLM parameters
     llm_temperature: float = float(os.getenv("LLM_TEMPERATURE", 0.7))

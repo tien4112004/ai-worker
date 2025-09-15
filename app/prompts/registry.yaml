@@ -11,3 +11,6 @@ prompts:
   presentation.user:
     path: "presentation/usr_prompt.st"
     format: "st"
+  image.system:
+    path: "image/sys_prompt.st"
+    format: "st"
