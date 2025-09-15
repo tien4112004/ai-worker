@@ -10,8 +10,6 @@ class OutlineGenerateRequest(BaseModel):
     provider: str
     language: str
     slide_count: int
-    learning_objective: str
-    target_age: str
 
     def to_dict(self):
         return {
@@ -20,8 +18,6 @@ class OutlineGenerateRequest(BaseModel):
             "provider": self.provider,
             "language": self.language,
             "slide_count": self.slide_count,
-            "learning_objective": self.learning_objective,
-            "target_age": self.target_age,
         }
 
 
@@ -31,8 +27,6 @@ class PresentationGenerateRequest(BaseModel):
     provider: str
     language: str
     slide_count: int
-    learning_objective: str
-    target_age: str
     outline: str
 
     def to_dict(self):
@@ -41,7 +35,5 @@ class PresentationGenerateRequest(BaseModel):
             "provider": self.provider,
             "language": self.language,
             "slide_count": self.slide_count,
-            "learning_objective": self.learning_objective,
-            "target_age": self.target_age,
             "outline": self.outline,
         }
