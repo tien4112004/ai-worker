@@ -35,7 +35,6 @@ class ImageGenerateRequest(BaseModel):
             "aspect_ratio": self.aspect_ratio,
             "safety_filter_level": self.safety_filter_level,
             "person_generation": self.person_generation,
-            "seed": self.seed,
         }
 
 

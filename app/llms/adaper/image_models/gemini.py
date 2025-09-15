@@ -86,22 +86,29 @@ class GeminiImageAdapter:
                 # generation_config=dict(response_modalities=["TEXT", "IMAGE"]),
             )
 
-            # Extract the image content
-            adapter = image_model.model_adapter
-            parts = adapter.get_multi_modal_content(response.content)
+            print(response)  # Debug print
+            # save to new file
+            if response:
+                # write the whole response to a file. Do not transform it to any kind of string
+                with open("response_image.bin", "wb") as f:
+                    f.write(response)
 
-            if parts and len(parts) > consts.ZERO_LENGTH:
-                for part in parts:
-                    # Find image part
-                    if hasattr(
-                        part, "mime_type"
-                    ) and part.mime_type.startswith("image/"):
-                        # Return base64 encoded image
-                        print(part.data)  # Debug print
-                        return {
-                            "base64_image": part.data,
-                            "created": datetime.now().isoformat(),
-                        }
+            # # Extract the image content
+            # adapter = image_model.model_adapter
+            # parts = adapter.get_multi_modal_content(response.content)
+
+            # if parts and len(parts) > consts.ZERO_LENGTH:
+            #     for part in parts:
+            #         # Find image part
+            #         if hasattr(
+            #             part, "mime_type"
+            #         ) and part.mime_type.startswith("image/"):
+            #             # Return base64 encoded image
+            #             print(part.data)  # Debug print
+            #             return {
+            #                 "base64_image": part.data,
+            #                 "created": datetime.now().isoformat(),
+            #             }
 
             return {
                 "error": "No image was generated in the response",
