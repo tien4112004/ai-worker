@@ -29,10 +29,6 @@ class ImageGenerateRequest(BaseModel):
     def to_dict(self):
         return {
             "prompt": self.prompt,
-            "model": self.model,
-            "provider": self.provider,
-            "sample_count": self.sample_count,
-            "aspect_ratio": self.aspect_ratio,
             "safety_filter_level": self.safety_filter_level,
             "person_generation": self.person_generation,
         }
@@ -45,9 +41,3 @@ class ImageGenerateResponse(BaseModel):
     error: Optional[str] = Field(
         default=None, description="Error message if image generation failed"
     )
-
-    def to_dict(self):
-        return {
-            "base64_image": self.base64_image,
-            "error": self.error,
-        }

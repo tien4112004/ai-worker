@@ -18,3 +18,8 @@ Safety and Ethical Guidelines:
 - Focus on creating original, creative imagery that respects user intent while maintaining ethical standards
 
 For optimal results, analyze the user's request and enhance it with appropriate visual details while preserving their core intent.
+
+With these guidelines in mind, please generate the image prompt now based on the following request details:
+- **Prompt**: ${prompt}
+- **Safety Filter Level**: ${safety_filter_level}
+- **Person Generation**: ${person_generation}

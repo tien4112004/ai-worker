@@ -110,10 +110,13 @@ def generatePresentation_Mock_Stream(
 def generate_image(
     imageGenerateRequest: ImageGenerateRequest, svc: ContentServiceDep
 ):
+    print("Received image generation request:", imageGenerateRequest)
+
     result = svc.generate_image(imageGenerateRequest)
     if "error" in result and result["error"]:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=result["error"],
         )
+
     return {"base64_image": result["base64_image"]}

@@ -19,6 +19,22 @@ class Settings(BaseSettings):
     )  # Alternative name for Gemini API key
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+
+    if not google_api_key or not openai_api_key or not anthropic_api_key:
+        raise ValueError(
+            "One or more API keys are not set in environment variables."
+        )
+
+    # VertexAI Configuration
+    service_account_json: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    project_id: str = os.getenv("VERTEX_PROJECT_ID", "")
+    location: str = os.getenv("VERTEX_LOCATION", "us-central1")
+
+    if not service_account_json or not project_id:
+        raise ValueError(
+            "Service account JSON or Project ID is not set in environment variables."
+        )
+
     max_retries: int = int(os.getenv("MAX_RETRIES", 3))
 
     # Default LLM parameters
