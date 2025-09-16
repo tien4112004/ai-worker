@@ -63,7 +63,6 @@ class GeminiImageAdapter:
         # ]
 
         try:
-            # Create a model instance with the appropriate configuration
             image_model = ChatGoogleGenerativeAI(
                 model=model or self.model_name,
                 google_api_key=os.environ.get("GOOGLE_API_KEY", ""),
@@ -86,29 +85,40 @@ class GeminiImageAdapter:
                 # generation_config=dict(response_modalities=["TEXT", "IMAGE"]),
             )
 
+            # Based on the response, handle the image data
             print(response)  # Debug print
-            # save to new file
-            if response:
-                # write the whole response to a file. Do not transform it to any kind of string
-                with open("response_image.bin", "wb") as f:
-                    f.write(response)
+            # Process the response which should contain image data
+            if response and hasattr(response, "content"):
+                # For Gemini, the image can be in different formats depending on the response
+                if isinstance(response.content, list):
+                    # Find the image block in the content list
+                    for block in response.content:
+                        if isinstance(block, dict) and "image_url" in block:
+                            # Extract base64 data from the URL
+                            image_data = block["image_url"]["url"].split(",")[
+                                -1
+                            ]
+                            image_bytes = base64.b64decode(image_data)
 
-            # # Extract the image content
-            # adapter = image_model.model_adapter
-            # parts = adapter.get_multi_modal_content(response.content)
+                            # Save the image to a file
+                            with open("response_image.png", "wb") as f:
+                                f.write(image_bytes)
 
-            # if parts and len(parts) > consts.ZERO_LENGTH:
-            #     for part in parts:
-            #         # Find image part
-            #         if hasattr(
-            #             part, "mime_type"
-            #         ) and part.mime_type.startswith("image/"):
-            #             # Return base64 encoded image
-            #             print(part.data)  # Debug print
-            #             return {
-            #                 "base64_image": part.data,
-            #                 "created": datetime.now().isoformat(),
-            #             }
+                            return {
+                                "base64_image": image_data,
+                                "created": datetime.now().isoformat(),
+                            }
+
+                # If response.content is a string containing a base64 image
+                elif (
+                    isinstance(response.content, str)
+                    and "base64" in response.content
+                ):
+                    image_data = response.content.split(",")[-1]
+                    return {
+                        "base64_image": image_data,
+                        "created": datetime.now().isoformat(),
+                    }
 
             return {
                 "error": "No image was generated in the response",
