@@ -7,35 +7,126 @@
 
 ## Setup
 
-- Prepare virtual environment (optional but recommended)
+### Prerequisites
+
+- Python 3.10+
+- pip (or pip3)
+- pip-tools (for dependency management)
+
+### Quick Setup
+
+1. **Prepare virtual environment** (recommended)
 
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 ```
 
-- Install dependencies
+2. **Install pip-tools**
 
 ```bash
-git clone
-cd ai-worker
-pip install -r requirements.txt
+pip install --upgrade pip pip-tools
 ```
 
-- Prepare environment variables
+3. **Clone and setup project**
+
+```bash
+git clone <repository-url>
+cd ai-worker
+make setup  # This will compile dependencies and sync environment
+```
+
+4. **Prepare environment variables**
 
 ```bash
 cp .env.sample .env
 # Edit .env file to add your API keys and configurations
 ```
 
-## How to run
+### Manual Setup (Alternative)
 
+If you prefer to install dependencies manually:
+
+```bash
+# Compile requirements from .in files
+make compile-deps
+
+# Install all dependencies for development
+make sync-deps
+
+# Or install specific dependency groups
+pip install -r requirements.txt              # Production dependencies
+pip install -r requirements-dev.txt          # Development dependencies
+pip install -r requirements-test.txt         # Test dependencies
+```
+
+## How to run
+****
 ```bash
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 ```
 
 ## Development
+
+### Dependency Management with pip-tools
+
+This project uses [pip-tools](https://pip-tools.readthedocs.io/) for reproducible dependency management. Dependencies are defined in `.in` files and compiled to `.txt` files.
+
+#### Dependency Files Structure
+
+- `requirements.in` - Production dependencies
+- `requirements-dev.in` - Development dependencies (includes production deps)
+- `requirements-test.in` - Test dependencies (includes production deps)
+- `requirements.txt` - Compiled production dependencies (auto-generated)
+- `requirements-dev.txt` - Compiled development dependencies (auto-generated)
+- `requirements-test.txt` - Compiled test dependencies (auto-generated)
+
+#### Common Dependency Tasks
+
+**Add a new dependency:**
+```bash
+# Add to appropriate .in file (e.g., requirements.in for production)
+echo "new-package>=1.0.0" >> requirements.in
+make compile-deps  # Compile all .in files
+make sync-deps     # Sync environment
+```
+
+**Update all dependencies:**
+```bash
+make upgrade-deps  # Upgrade to latest compatible versions
+make sync-deps     # Sync environment with new versions
+```
+
+**Update specific dependency:**
+```bash
+pip-compile --upgrade-package package-name requirements.in
+make sync-deps
+```
+
+**Sync environment with requirements:**
+```bash
+make sync-deps  # Ensures your environment matches compiled requirements exactly
+```
+
+**Install development environment:**
+```bash
+make install-dev  # Install dev dependencies only
+```
+
+**Show outdated packages:**
+```bash
+make show-outdated
+```
+
+#### Makefile Targets
+
+- `make setup` - Complete project setup (compile deps + sync + setup pre-commit)
+- `make compile-deps` - Compile all .in files to .txt files
+- `make upgrade-deps` - Upgrade all dependencies to latest versions
+- `make sync-deps` - Sync virtual environment with compiled requirements
+- `make install-dev` - Install development dependencies
+- `make install-test` - Install test dependencies
+- `make update-pip-tools` - Update pip-tools itself
 
 ### Pre-commit Hooks
 
@@ -106,14 +197,63 @@ docker-compose down
 #### Docker Image Features
 
 - **Multi-stage build** for optimized image size
+- **pip-tools integration** for reproducible builds
 - **Non-root user** for security
 - **Health checks** for container monitoring
 - **Build metadata** (git commit, build date)
 - **Automatic testing** during build process
 
+#### Docker and pip-tools
+
+The Docker build process uses the compiled `requirements.txt` files for reproducible container builds:
+
+```dockerfile
+# Production image uses compiled requirements
+COPY requirements.txt .
+RUN pip install --no-deps -r requirements.txt
+
+# Development image can use dev requirements
+COPY requirements-dev.txt .
+RUN pip install --no-deps -r requirements-dev.txt
+```
+
+Make sure to compile your requirements before building Docker images:
+
+```bash
+make compile-deps  # Ensure requirements.txt is up to date
+bash scripts/build-image.sh
+```
+
 ## Scripts
 
-The project includes several utility scripts in the `scripts/` directory:
+The project includes several utility scripts and Makefile targets for common development tasks:
+
+### Makefile Targets
+
+**Dependency Management:**
+```bash
+make setup           # Complete project setup
+make compile-deps    # Compile .in files to .txt files
+make upgrade-deps    # Upgrade all dependencies
+make sync-deps       # Sync environment with requirements
+make install-dev     # Install development dependencies
+make install-test    # Install test dependencies
+make show-outdated   # Show outdated packages
+make update-pip-tools # Update pip-tools itself
+```
+
+**Application:**
+```bash
+make run            # Run the application with uvicorn
+make test           # Run tests
+make test-with-coverage # Run tests with coverage report
+make clean          # Clean generated files and cache
+```
+
+**Docker:**
+```bash
+make build          # Build Docker image
+```
 
 ### Build Scripts
 
@@ -130,6 +270,9 @@ The project includes several utility scripts in the `scripts/` directory:
 ### Usage Examples
 
 ```bash
+# Complete project setup
+make setup
+
 # Build Docker image
 bash scripts/build-image.sh
 
@@ -138,6 +281,9 @@ bash scripts/build-image.sh my-app:v1.2.3
 
 # Build and push to registry
 bash scripts/build-image.sh my-app:latest true
+
+# Update dependencies
+make upgrade-deps
 
 # Setup development environment
 bash scripts/setup-pre-commit.sh
@@ -181,7 +327,9 @@ This project includes comprehensive CI/CD pipelines:
 
 The CI pipeline automatically:
 
-- Installs dependencies
+- Installs pip-tools for dependency management
+- Compiles requirements from .in files
+- Installs dependencies using compiled requirements
 - Sets up test environment
 - Runs comprehensive test suite
 - Generates coverage reports

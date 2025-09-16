@@ -179,5 +179,5 @@ pyrightconfig.json
 service-account.json
 
 # Local environment variables
-requirements-test.txt
 requirements-dev.txt
+requirements-test.txt
