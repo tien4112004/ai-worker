@@ -61,8 +61,9 @@ gitpython==3.1.45
     # via -r requirements.in
 google-ai-generativelanguage==0.6.15
     # via google-generativeai
-google-api-core[grpc]==2.25.1
+google-api-core[grpc]==2.19.1
     # via
+    #   -r requirements.in
     #   google-ai-generativelanguage
     #   google-api-python-client
     #   google-cloud-aiplatform
@@ -129,13 +130,14 @@ greenlet==3.2.4
     # via sqlalchemy
 grpc-google-iam-v1==0.14.2
     # via google-cloud-resource-manager
-grpcio==1.74.0
+grpcio==1.75.0
     # via
+    #   -r requirements.in
     #   google-api-core
     #   googleapis-common-protos
     #   grpc-google-iam-v1
     #   grpcio-status
-grpcio-status==1.71.2
+grpcio-status==1.63.0rc1
     # via google-api-core
 h11==0.16.0
     # via
@@ -250,8 +252,9 @@ proto-plus==1.26.1
     #   google-api-core
     #   google-cloud-aiplatform
     #   google-cloud-resource-manager
-protobuf==5.29.5
+protobuf==4.25.3
     # via
+    #   -r requirements.in
     #   google-ai-generativelanguage
     #   google-api-core
     #   google-cloud-aiplatform
@@ -361,6 +364,7 @@ typing-extensions==4.15.0
     #   google-cloud-aiplatform
     #   google-genai
     #   google-generativeai
+    #   grpcio
     #   langchain-core
     #   openai
     #   pydantic

@@ -22,6 +22,10 @@ google-cloud-aiplatform
 google-auth
 vertexai
 
+grpcio==1.75.0
+protobuf==4.25.3
+google-api-core==2.19.1
+
 # OpenAI
 openai>=1.107.0
 
