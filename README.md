@@ -43,6 +43,36 @@ cp .env.sample .env
 # Edit .env file to add your API keys and configurations
 ```
 
+### VertexAI Configuration
+
+For Google VertexAI integration, you need to set up additional environment variables and service account credentials:
+
+1. **Set up service account**:
+   - Create a service account in Google Cloud Console
+   - Download the service account JSON key file
+   - Place the file as `service-account.json` in the project root
+
+2. **Export VertexAI environment variables**:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
+export VERTEX_PROJECT_ID=your-gcp-project-id
+export VERTEX_LOCATION=us-central1
+```
+
+3. **Update .env file**:
+
+Edit your `.env` file to include the VertexAI configuration:
+
+```bash
+# For Google VertexAI
+GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
+VERTEX_PROJECT_ID=your-gcp-project-id
+VERTEX_LOCATION=us-central1
+```
+
+**Note**: Make sure your Google Cloud project has the Vertex AI API enabled and your service account has the necessary permissions (Vertex AI User role).
+
 ### Manual Setup (Alternative)
 
 If you prefer to install dependencies manually:
