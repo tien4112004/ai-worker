@@ -19,6 +19,7 @@ langchain-google-vertexai>=2.1.1
 # Google AI Libraries
 google-generativeai
 google-cloud-aiplatform
+google-auth
 vertexai
 
 # OpenAI

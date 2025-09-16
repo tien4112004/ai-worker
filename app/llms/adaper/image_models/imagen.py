@@ -1,11 +1,7 @@
-import base64
-import json
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict
 
-from git import Union
-from langchain_core.messages import BaseMessage
-from langchain_google_vertexai.vision_models import VertexAIImageGeneratorChat
+from vertexai.preview.vision_models import ImageGenerationModel
 
 from app.core.config import settings
 
@@ -13,68 +9,54 @@ logger = settings.logger
 
 
 class ImagenAdapter:
-    def __init__(self, model: str, **params):
+    def __init__(self, model: str):
         # REQUIRES: VERTEX_PROJECT_ID and VERTEX_LOCATION set in env
-        project_id = settings.project_id
+        self._llm = ImageGenerationModel.from_pretrained(model_name=model)
 
-        self._llm = VertexAIImageGeneratorChat(
-            model_name=model,
-            project=project_id,
-            **params,
-        )
-
-    def _format_messages(
-        self, messages: List[BaseMessage]
-    ) -> Union[str, List[Union[str, Dict]]]:
-        """Format messages for image generation."""
-        # For simplicity, we'll just use the last user message as the prompt
-        for message in reversed(messages):
-            if message.type == "human":
-                return message.content
-
-        # Fallback to the last message content if no user message is found
-        return messages[-1].content
-
-    def generate(
-        self, messages: List[BaseMessage], **params
-    ) -> Dict[str, Any]:
-        """Generate image based on the provided prompt."""
-        # prompt = self._format_messages(messages)
-
-        # Parse aspect ratio
-        # aspect_ratio = params.get("aspect_ratio", "1024x1024")
-        # if "x" in aspect_ratio:
-        #     self._image_config["width"], self._image_config["height"] = map(
-        #         int, aspect_ratio.split("x")
-        #     )
-        # else:
-        #     self._image_config["width"] = self._image_config["height"] = int(
-        #         aspect_ratio
-        #     )
+    def generate(self, message: str, **params) -> Dict[str, Any]:
+        """
+        Generate image based on the provided prompt.
+        Args:
+            message (str): The prompt for image generation.
+            params: Additional parameters including:
+                number_of_images (int): Number of images to generate.
+                aspect_ratio (str): Desired image dimensions, format: WIDTHxHEIGHT.
+                safety_filter_level (str): Safety filter level: BLOCK_NONE, BLOCK_LOW, BLOCK_MEDIUM, BLOCK_HIGH.
+                person_generation (Optional[Literal]): Allow or block person generation: ALLOW, BLOCK.
+                seed (Optional[int]): Random seed for reproducible generation.
+                negative_prompt (Optional[Literal]): Negative prompt to avoid certain elements in the image.
+        Returns:
+            Dict[str, Any]: A dictionary containing either the base64 image data or an error message
+        """
 
         try:
-            # Generate the image
-            response = self._llm.invoke(input=messages)
+            response = self._llm.generate_images(prompt=message, **params)
 
-            # Extract base64 image data
-            if response and hasattr(response, "content"):
-                image_data = self._get_image_base64(response)
+            if not response or not response.images:
                 return {
-                    "base64_image": image_data,
+                    "error": "No image was generated in the response",
+                    "base64_image": self._get_placeholder_image(),
                     "created": datetime.now().isoformat(),
                 }
 
-            return {
-                "error": "No image was generated in the response",
-                "base64_image": self._get_placeholder_image(),
-                "created": datetime.now().isoformat(),
-            }
+            images = []
+            for image in response.images:
+                try:
+                    base64_data = self._get_image_base64(image)
+                    images.append(base64_data)
+                except Exception as e:
+                    logger.warning(f"Failed to process image: {e}")
+                    images.append(self._get_placeholder_image())
 
+            return {
+                "images": images,
+                "count": len(images),
+            }
         except Exception as e:
+            logger.error(f"Error during image generation: {e}")
             return {
                 "error": str(e),
                 "base64_image": self._get_placeholder_image(),
-                "created": datetime.now().isoformat(),
             }
 
     def _get_placeholder_image(self) -> str:
@@ -82,11 +64,24 @@ class ImagenAdapter:
         # 1x1 transparent PNG in base64
         return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
 
-    def _get_image_base64(self, response: BaseMessage) -> None:
-        """Extract the base64 image string from the BaseMessage response."""
-        image_block = next(
-            block
-            for block in response.content
-            if isinstance(block, dict) and block.get("image_url")
-        )
-        return image_block["image_url"].get("url").split(",")[-1]
+    def _get_image_base64(self, image) -> str:
+        """Extract the base64 image string from the Vertex AI image response."""
+        try:
+            # For Vertex AI ImageGenerationModel, images have a _image_bytes attribute
+            if hasattr(image, "_image_bytes"):
+                import base64
+
+                return base64.b64encode(image._image_bytes).decode("utf-8")
+
+            # Alternative: if the image object has a different structure
+            # You might need to adjust this based on the actual Vertex AI response format
+            if hasattr(image, "data"):
+                return image.data
+
+            # Fallback to placeholder if we can't extract the image
+            logger.warning("Could not extract image data, using placeholder")
+            return self._get_placeholder_image()
+
+        except Exception as e:
+            logger.error(f"Error extracting image base64: {e}")
+            return self._get_placeholder_image()

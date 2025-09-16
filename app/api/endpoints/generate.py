@@ -119,4 +119,8 @@ def generate_image(
             detail=result["error"],
         )
 
-    return {"base64_image": result["base64_image"]}
+    return {
+        "images": result["images"],
+        "count": result["count"],
+        "error": None,
+    }

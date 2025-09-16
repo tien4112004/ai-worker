@@ -265,15 +265,18 @@ class ContentService:
 
     def generate_image(self, request: ImageGenerateRequest):
         """Generate image based on text description"""
-        sys_msg = self._system("image.system", request.to_dict())
+
+        usr_msg = self._system("image.user", {"prompt": request.prompt})
 
         result = self.llm_executor.generate_image(
             provider=request.provider,
             model=request.model,
-            messages=[
-                HumanMessage(content=sys_msg),
-            ],
+            message=usr_msg,
+            number_of_images=request.number_of_images,
+            aspect_ratio=request.aspect_ratio,
+            safety_filter_level=request.safety_filter_level,
+            person_generation=request.person_generation,
             seed=request.seed,
-            number_of_results=request.sample_count,
+            negative_prompt=request.negative_prompt,
         )
         return result

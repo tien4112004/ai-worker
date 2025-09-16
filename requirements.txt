@@ -75,6 +75,7 @@ google-api-python-client==2.181.0
     # via google-generativeai
 google-auth==2.40.3
     # via
+    #   -r requirements.in
     #   google-ai-generativelanguage
     #   google-api-core
     #   google-api-python-client

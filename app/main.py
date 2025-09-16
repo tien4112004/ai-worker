@@ -1,7 +1,9 @@
+import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from google.cloud import aiplatform
 
 from app.api.router import api
 from app.core.config import settings
@@ -21,8 +23,25 @@ async def lifespan(app: FastAPI):
     app.state.settings = settings
     app.state.content_service = content_service
 
+    def init_vertexai():
+        """Initialize Vertex AI settings."""
+        import vertexai
+        from google.oauth2 import service_account
+
+        service_account_info = json.load(open(settings.service_account_json))
+        credentials = service_account.Credentials.from_service_account_info(
+            service_account_info
+        )
+
+        aiplatform.init(
+            project=settings.project_id,
+            location=settings.location,
+            credentials=credentials,
+        )
+
+    init_vertexai()
+
     yield
-    # Shutdown code can go here
 
 
 def create_app() -> FastAPI:

@@ -1,29 +1,38 @@
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
+from typing_extensions import Literal
 
 
 class ImageGenerateRequest(BaseModel):
     prompt: str
     model: str
     provider: str
-    sample_count: int = Field(
+    number_of_images: int = Field(
         default=1, description="Number of images to generate"
     )
-    aspect_ratio: str = Field(
-        default="1024x1024",
+    aspect_ratio: Literal["1:1", "9:16", "16:9", "4:3", "3:4"] = Field(
+        default="1:1",
         description="Desired image dimensions, format: WIDTHxHEIGHT",
     )
-    safety_filter_level: str = Field(
-        default="BLOCK_MEDIUM",
-        description="Safety filter level: BLOCK_NONE, BLOCK_LOW, BLOCK_MEDIUM, BLOCK_HIGH",
+    safety_filter_level: Optional[
+        Literal["block_most", "block_some", "block_few", "block_fewest"]
+    ] = Field(
+        default="block_few",
+        description="Safety filter level: block_most, block_some, block_few, block_fewest",
     )
-    person_generation: str = Field(
-        default="ALLOW",
-        description="Allow or block person generation: ALLOW, BLOCK",
+    person_generation: (
+        Literal["dont_allow", "allow_adult", "allow_all"] | None
+    ) = Field(
+        default="allow_all",
+        description="Person generation: dont_allow, allow_adult, allow_all",
     )
     seed: Optional[int] = Field(
         default=None, description="Random seed for reproducible generation"
+    )
+    negative_prompt: Optional[str] = Field(
+        default=None,
+        description="Negative prompt to avoid certain elements in the image",
     )
 
     def to_dict(self):
@@ -35,9 +44,10 @@ class ImageGenerateRequest(BaseModel):
 
 
 class ImageGenerateResponse(BaseModel):
-    base64_image: str = Field(
-        description="Base64 encoded image data (without mime prefix)"
+    images: List[str] = Field(
+        description="Base64 encoded images data (without mime prefix)"
     )
     error: Optional[str] = Field(
         default=None, description="Error message if image generation failed"
     )
+    count: int = Field(default=1, description="Number of Images")
