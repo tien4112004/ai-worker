@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import PlainTextResponse, StreamingResponse
-from httpcore import Response
+from fastapi.responses import StreamingResponse
+import base64
+from sse_starlette.sse import EventSourceResponse
+import json
 
 from app.depends import ContentServiceDep
 from app.schemas.image_content import (
@@ -31,10 +33,8 @@ def generateOutline_Stream(
     svc: ContentServiceDep,
 ):
     result = svc.make_outline_stream(outlineGenerateRequest)
-
-    return StreamingResponse(
-        sse_word_by_word(request, result), media_type="text/event-stream"
-    )
+    print("Starting outline stream response")
+    return EventSourceResponse(sse_word_by_word(request, result), ping=None)
 
 
 @router.post("/presentations/generate")
@@ -52,11 +52,11 @@ def generatePresentation_Stream(
     presentationGenerateRequest: PresentationGenerateRequest,
     svc: ContentServiceDep,
 ):
-    result = svc.make_presentation_stream(presentationGenerateRequest)
+    print("Received mock stream request:", presentationGenerateRequest)
 
-    return StreamingResponse(
-        sse_json_by_json(request, result), media_type="text/event-stream"
-    )
+    result = svc.make_presentation_stream(presentationGenerateRequest)
+    
+    return EventSourceResponse(sse_json_by_json(request, result), ping=None)
 
 
 # Mock endpoints for testing without LLM calls
@@ -70,17 +70,19 @@ def generateOutline_Mock(
 
 
 @router.post("/outline/generate/stream/mock")
-def generateOutline_Mock_Stream(
+async def generateOutline_Mock_Stream(
     request: Request,
     outlineGenerateRequest: OutlineGenerateRequest,
     svc: ContentServiceDep,
 ):
     print("Received mock stream request:", outlineGenerateRequest)
-    result = svc.make_outline_stream_mock()
+    async def event_stream():
+        for chunk in svc.make_outline_stream_mock():
+            if await request.is_disconnected():
+                break
+            yield {"data": base64.b64encode(chunk.encode("utf-8")).decode("ascii")}
 
-    return StreamingResponse(
-        sse_word_by_word(request, result), media_type="text/event-stream"
-    )
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @router.post("/presentations/generate/mock")
@@ -94,12 +96,20 @@ def generatePresentation_Mock(
 
 
 @router.post("/presentations/generate/stream/mock")
-def generatePresentation_Mock_Stream(
+async def generatePresentation_Mock_Stream(
     request: Request,
     presentationGenerateRequest: PresentationGenerateRequest,
     svc: ContentServiceDep,
 ):
     print("Received mock stream request:", presentationGenerateRequest)
+
+    async def event_stream():
+        async for obj in svc.make_presentation_stream_mock():
+            if await request.is_disconnected():
+                break
+            yield f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
     result = svc.make_presentation_stream_mock()
     return StreamingResponse(
         sse_json_by_json(request, result), media_type="text/event-stream"
