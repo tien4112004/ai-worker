@@ -418,6 +418,56 @@ The CI pipeline automatically:
             "language": "vi"
         }'
    ```
+
+#### Image Generation
+
+```bash
+curl -X POST "http://localhost:8080/api/image/generate"
+    -H "Content-Type: application/json"
+    -d '{
+        "prompt": "A beautiful mountain landscape with a lake and trees",
+        "model": "imagen-3.0-generate-001",
+        "provider": "google",
+        "number_of_images": 1,
+        "aspect_ratio": "1:1",
+        "safety_filter_level": "block_few",
+        "person_generation": "allow_all",
+        "seed": 42,
+        "negative_prompt": "blurry, low quality"
+    }'
+```
+
+**Request Parameters:**
+- `prompt` (required): Text description of the image to generate
+- `model` (required): AI model to use (e.g., "imagen-3.0-generate-001")
+- `provider` (required): Provider name (e.g., "google")
+- `number_of_images` (optional): Number of images to generate (default: 1)
+- `aspect_ratio` (optional): Image dimensions - "1:1", "9:16", "16:9", "4:3", "3:4" (default: "1:1")
+- `safety_filter_level` (optional): Safety filter - "block_most", "block_some", "block_few", "block_fewest" (default: "block_few")
+- `person_generation` (optional): Person generation policy - "dont_allow", "allow_adult", "allow_all" (default: "allow_all")
+- `seed` (optional): Random seed for reproducible generation
+- `negative_prompt` (optional): Elements to avoid in the image
+
+**Response Format:**
+```json
+{
+    "images": [
+        "iVBORw0KGgoAAAANSUhEUgAA...",
+        "another_base64_encoded_image..."
+    ],
+    "count": 2,
+    "error": null
+}
+```
+
+**Error Response:**
+If image generation fails, the API returns an HTTP 500 error with details:
+```json
+{
+    "detail": "Error message describing what went wrong"
+}
+```
+
 ### With web UI
 - First, `cd web_test_api` folder
 - Then run:
@@ -425,37 +475,7 @@ The CI pipeline automatically:
      python3 -m http.server 3000
    ```
 - Access to `localhost:3000` in your browser
-### Image Generation API
-
-Generate images based on text descriptions. The API returns a base64-encoded image that can be displayed in a web application:
-
-```bash
-curl -X POST "http://localhost:8080/api/v1/image/generate"
-    -H "Content-Type: application/json"
-    -d '{
-    "prompt": "A beautiful mountain landscape with a lake and trees",
-    "sample_count": 1,
-    "aspect_ratio": "1024x1024",
-    "safety_filter_level": "BLOCK_NONE",
-    "person_generation": "ALLOW",
-    "seed": 42
-    }'
-```
-
-The response will be just the base64-encoded image data (without any mime prefix):
-
-```json
-{
-  "base64_image": "iVBORw0KGgoAAAANSUhEUgAA..."
-}
-```
-
-You can use this in HTML like:
-
-```html
-<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..." />
-```
-
+-
 ## Folder structure
 
 ```bash
