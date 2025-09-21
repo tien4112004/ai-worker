@@ -430,15 +430,18 @@ The CI pipeline automatically:
 Generate images based on text descriptions. The API returns a base64-encoded image that can be displayed in a web application:
 
 ```bash
-curl -X POST "http://localhost:8080/api/v1/image/generate"
+curl -X POST "http://localhost:8080/api/image/generate"
     -H "Content-Type: application/json"
     -d '{
-    "prompt": "A beautiful mountain landscape with a lake and trees",
-    "sample_count": 1,
-    "aspect_ratio": "1024x1024",
-    "safety_filter_level": "BLOCK_NONE",
-    "person_generation": "ALLOW",
-    "seed": 42
+        "prompt": "A beautiful mountain landscape with a lake and trees",
+        "model": "imagen-3.0-generate-001",
+        "provider": "google",
+        "number_of_images": 1,
+        "aspect_ratio": "1:1",
+        "safety_filter_level": "block_few",
+        "person_generation": "allow_all",
+        "seed": 42,
+        "negative_prompt": "blurry, low quality"
     }'
 ```
 
