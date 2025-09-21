@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007cba;
+            color: white;
+        }
+
+        button:hover {
+            background-color: #005a87;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>API Test Interface</h1>
+    <div class="batch-api">
+        <h2>Batch API</h2>
+        <div class="button-row">
+            <button onclick="callAPI('outline/generate')">Outline Generate</button>
+            <button onclick="callAPI('outline/generate/mock')">Outline Generate with Mock Data</button>
+        </div>
+
+        <div class="button-row">
+            <button onclick="callAPI('presentations/generate')">Presentations Generate</button>
+            <button onclick="callAPI('presentations/generate/mock')">Presentations Generate with Mock Data</button>
+        </div>
+    </div>
+
+    <div class="stream-api">
+        <h2>Stream API</h2>
+        <div class="button-row">
+            <button onclick="callAPI('outline/generate/stream')">Outline Generate Stream</button>
+            <button onclick="callAPI('outline/generate/stream/mock')">Outline Generate Stream with Mock Data</button>
+        </div>
+
+        <div class="button-row">
+            <button onclick="callAPI('presentations/generate/stream')">Presentations Generate Stream</button>
+            <button onclick="callAPI('presentations/generate/stream/mock')">Presentations Generate Stream with Mock
+                Data</button>
+        </div>
+    </div>
+
+    <div class="image-api">
+        <h2>Image API</h2>
+        <div class="button-row">
+            <button onclick="callAPI('image/generate')">Image Generate</button>
+            <button onclick="callAPI('image/generate/mock')">Image Generate with Mock Data</button>
+        </div>
+    </div>
+
+    <script>
+        requestBodyForOutline = {
+            "topic": "The Future of Renewable Energy",
+            "slide_count": 5,
+            "language": "en",
+            "model": "gemini-2.5-flash-lite",
+            "provider": "google"
+        };
+
+        requestBodyForPresentations = {
+            "outline": "```md\n# Introduction to Artificial Intelligence\n• What is AI?\n• Why AI matters in today's world\n• Overview of presentation goals\n\n# History and Evolution of AI\n• Early concepts and origins (1940s-1950s)\n• The AI winters and revivals\n• Major breakthroughs and milestones\n• Key pioneers and their contributions\n\n# Types and Categories of AI\n• Narrow AI vs General AI\n• Machine Learning fundamentals\n• Deep Learning and Neural Networks\n• Natural Language Processing\n• Computer Vision\n\n# Real-World Applications of AI\n• Healthcare and medical diagnosis\n• Transportation and autonomous vehicles\n• Finance and fraud detection\n• Entertainment and recommendation systems\n• Smart homes and IoT devices\n\n# Future of AI and Emerging Trends\n• Ethical considerations and responsible AI\n• AI governance and regulation\n• Potential societal impacts\n• Career opportunities in AI\n• Preparing for an AI-driven future\n```",
+            "provider": "google",
+            "slide_count": 5,
+            "model": "gemini-2.5-flash-lite",
+            "language": "vi"
+        };
+
+        requestBodyForImage = {
+            "prompt": "A futuristic cityscape with flying cars and neon lights",
+            "n": 1,
+            "size": "1024x1024"
+        };
+
+        async function callAPI(endpoint, requestBody = {}) {
+            try {
+                const response = await fetch(`http://localhost:8080/api/${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(
+                        endpoint.includes('outline') ? requestBodyForOutline :
+                            endpoint.includes('presentations') ? requestBodyForPresentations :
+                                endpoint.includes('image') ? requestBodyForImage :
+                                    {}
+                    )
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(`Response from ${endpoint}:`, data);
+                } else {
+                    console.error(`Error from ${endpoint}:`, response.status);
+                }
+            } catch (error) {
+                console.error(`Network error calling ${endpoint}:`, error);
+            }
+        }
+    </script>
+</body>
+
+</html>
