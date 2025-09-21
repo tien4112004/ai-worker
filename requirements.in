@@ -1,0 +1,41 @@
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.35.0
+pydantic>=2.11.0
+pydantic-settings>=2.10.0
+
+# LLM Libraries - Core LangChain
+langchain>=0.3.27
+langchain-core>=0.3.76
+langchain-openai>=0.3.33
+langchain-anthropic>=0.3.20
+langchain-community>=0.3.29
+langchain-text-splitters>=0.3.11
+
+# Google/VertexAI LangChain Integration
+langchain-google-genai>=1.0.1
+langchain-google-vertexai>=2.1.1
+
+# Google AI Libraries
+google-generativeai
+google-cloud-aiplatform
+google-auth
+vertexai
+
+grpcio==1.75.0
+protobuf==4.25.3
+google-api-core==2.19.1
+
+# OpenAI
+openai>=1.107.0
+
+# Anthropic
+anthropic>=0.67.0
+
+# Environment and Configuration
+python-dotenv>=1.1.0
+PyYAML>=6.0.2
+
+# Utilities
+GitPython>=3.1.45
+Jinja2>=3.1.6

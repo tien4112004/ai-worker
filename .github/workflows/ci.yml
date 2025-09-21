@@ -9,30 +9,44 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11"]
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      VERTEX_LOCATION: ${{ secrets.VERTEX_LOCATION }}
+      VERTEX_PROJECT_ID: ${{ secrets.VERTEX_PROJECT_ID }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.11
 
     - name: Cache pip packages
       uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.in') }}
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    - name: Install dependencies
+    - name: Install pip-tools
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install pip-tools
+
+    - name: Compile dependencies
+      run: |
+        pip-compile requirements.in
+        pip-compile requirements-dev.in
+        pip-compile requirements-test.in
+
+    - name: Install dependencies
+      run: |
+        pip-sync requirements.txt requirements-test.txt
 
     - name: Run tests with coverage & reports
       run: |
@@ -42,13 +56,16 @@ jobs:
           --maxfail=1 \
           --junitxml=reports/junit.xml \
           --html=reports/pytest.html \
-          --self-contained-html
+          --self-contained-html \
+          --cov=app \
+          --cov-report=html:reports/coverage \
+          --cov-report=xml:reports/coverage.xml
 
     - name: Upload test reports (HTML, JUnit, Coverage)
       if: always()   # ensure we keep reports even when tests fail
       uses: actions/upload-artifact@v4
       with:
-        name: test-reports-py${{ matrix.python-version }}
+        name: test-reports-py3.11
         path: reports/
         if-no-files-found: warn
         retention-days: 7

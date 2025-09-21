@@ -1,0 +1,16 @@
+# Include base requirements
+-c requirements.txt
+
+# Development Tools
+pip-tools>=7.5.0
+pre-commit>=4.0.0
+
+# Code Quality
+black>=25.1.0
+isort>=6.0.1
+flake8>=7.3.0
+mypy>=1.7.1
+bandit>=1.7.5
+
+# Build Tools
+build>=1.3.0

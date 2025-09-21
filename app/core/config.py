@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from typing import ClassVar, List
@@ -19,6 +20,13 @@ class Settings(BaseSettings):
     )  # Alternative name for Gemini API key
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+
+    # VertexAI Configuration
+    service_account_json: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "./service_account.json")
+    project_id: str = os.getenv("VERTEX_PROJECT_ID", "")
+    location: str = os.getenv("VERTEX_LOCATION", "us-central1")
+
+    max_retries: int = int(os.getenv("MAX_RETRIES", 3))
 
     # Default LLM parameters
     llm_temperature: float = float(os.getenv("LLM_TEMPERATURE", 0.7))

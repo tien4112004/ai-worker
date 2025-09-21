@@ -1,8 +1,12 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from httpcore import Response
 
 from app.depends import ContentServiceDep
+from app.schemas.image_content import (
+    ImageGenerateRequest,
+    ImageGenerateResponse,
+)
 from app.schemas.slide_content import (
     OutlineGenerateRequest,
     PresentationGenerateRequest,
@@ -100,3 +104,23 @@ def generatePresentation_Mock_Stream(
     return StreamingResponse(
         sse_json_by_json(request, result), media_type="text/event-stream"
     )
+
+
+@router.post("/image/generate", response_model=ImageGenerateResponse)
+def generate_image(
+    imageGenerateRequest: ImageGenerateRequest, svc: ContentServiceDep
+):
+    print("Received image generation request:", imageGenerateRequest)
+
+    result = svc.generate_image(imageGenerateRequest)
+    if "error" in result and result["error"]:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=result["error"],
+        )
+
+    return {
+        "images": result["images"],
+        "count": result["count"],
+        "error": None,
+    }

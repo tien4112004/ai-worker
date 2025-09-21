@@ -5,6 +5,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.repositories.llm_result_repository import llm_result_repository
+from app.schemas.image_content import ImageGenerateRequest
 from app.schemas.slide_content import (
     OutlineGenerateRequest,
     PresentationGenerateRequest,
@@ -231,7 +232,6 @@ class ContentService:
             str: Parts of the mock outline.
         """
         import re
-        import time
 
         outline = '### Giới thiệu: Một Cuộc Phiêu Lưu Lịch Sử Về Sông Bạch Đằng!\n\nChào các bạn nhỏ! Hôm nay, chúng ta sẽ cùng nhau du hành về quá khứ, đến với một khúc sông thật đặc biệt, nơi đã diễn ra một trận chiến lừng lẫy, giúp bảo vệ đất nước Việt Nam của chúng ta. Các bạn đã sẵn sàng chưa nào?\n\n*   Chúng ta sẽ khám phá câu chuyện về **Sông Bạch Đằng** – một dòng sông hùng vĩ.\n*   Tìm hiểu về những người anh hùng dũng cảm đã chiến đấu trên dòng sông này.\n*   Và hiểu tại sao trận chiến này lại quan trọng đến vậy!\n\n_Hãy chuẩn bị tinh thần để trở thành những nhà thám hiểm lịch sử nhé!_\n\n### Ai Đã Xâm Lược Nước Ta?\n\nNgày xưa, có những đội quân từ phương Bắc muốn xâm chiếm đất nước ta. Họ rất đông và mạnh mẽ, giống như một cơn bão sắp ập đến vậy.\n\n*   Quân địch đến từ **nước Nam Hán** (nay thuộc Trung Quốc).\n*   Họ muốn chiếm đóng và cai trị đất nước của chúng ta.\n*   Nhân dân ta rất lo sợ, nhưng không hề muốn bị mất nước.\n\n> Tưởng tượng xem, nếu có ai đó muốn lấy đi đồ chơi yêu thích của bạn, bạn sẽ làm gì? Ông cha ta cũng đã rất quyết tâm bảo vệ đất nước mình!\n\n### "Bẫy" Trên Sông: Ý Tưởng Tuyệt Vời Của Ngô Quyền!\n\nĐể chống lại quân địch mạnh mẽ, Ngô Quyền – vị tướng tài ba của chúng ta – đã nghĩ ra một kế hoạch vô cùng thông minh và độc đáo. Đó là sử dụng chính dòng sông Bạch Đằng để làm "chiến trường"!\n\n*   Ngô Quyền cho quân lính **cắm cọc nhọn** xuống lòng sông, ẩn dưới mặt nước lúc triều lên.\n*   Khi **triều rút**, những chiếc cọc này sẽ nhô lên, sẵn sàng đâm thủng thuyền địch.\n*   Đây là một cái bẫy thiên nhiên tuyệt vời!\n\n_Giống như chúng ta giăng bẫy chuột vậy đó, nhưng là bẫy cho thuyền lớn!_\n\n### Trận Chiến Rực Lửa Trên Sông!\n\nKhi quân Nam Hán hùng hổ tiến vào sông Bạch Đằng, họ đã mắc bẫy của Ngô Quyền.\n\n*   Thuyền địch bị **đâm thủng** bởi những chiếc cọc nhọn khi nước rút.\n*   Quân ta từ hai bên bờ sông đã **tấn công dữ dội**.\n*   Trận chiến diễn ra vô cùng ác liệt, nhưng quân ta đã chiến thắng vang dội!\n\n> Tiếng reo hò vang vọng khắp sông, đánh dấu một chiến thắng vẻ vang cho dân tộc!\n\n### Ý Nghĩa Lịch Sử: Vì Sao Chúng Ta Nhớ Mãi?\n\nChiến thắng sông Bạch Đằng không chỉ là một trận đánh hay, mà nó còn mang một ý nghĩa vô cùng to lớn đối với lịch sử Việt Nam.\n\n*   Trận chiến này đã giúp **giải phóng đất nước** khỏi ách đô hộ của quân Nam Hán.\n*   Nó khẳng định ý chí **quyết tâm giữ gìn non sông** của dân tộc ta.\n*   Ngô Quyền trở thành vị vua, mở ra một thời kỳ độc lập mới cho đất nước.\n\n_Nhờ có những người anh hùng như Ngô Quyền và chiến thắng Bạch Đằng, Việt Nam chúng ta mới được tự do và phát triển cho đến ngày nay!_'
         # Split the outline into meaningful chunks (words and punctuation)
@@ -262,3 +262,21 @@ class ContentService:
 
         outline = '### Giới thiệu: Một Cuộc Phiêu Lưu Lịch Sử Về Sông Bạch Đằng!\n\nChào các bạn nhỏ! Hôm nay, chúng ta sẽ cùng nhau du hành về quá khứ, đến với một khúc sông thật đặc biệt, nơi đã diễn ra một trận chiến lừng lẫy, giúp bảo vệ đất nước Việt Nam của chúng ta. Các bạn đã sẵn sàng chưa nào?\n\n*   Chúng ta sẽ khám phá câu chuyện về **Sông Bạch Đằng** – một dòng sông hùng vĩ.\n*   Tìm hiểu về những người anh hùng dũng cảm đã chiến đấu trên dòng sông này.\n*   Và hiểu tại sao trận chiến này lại quan trọng đến vậy!\n\n_Hãy chuẩn bị tinh thần để trở thành những nhà thám hiểm lịch sử nhé!_\n\n### Ai Đã Xâm Lược Nước Ta?\n\nNgày xưa, có những đội quân từ phương Bắc muốn xâm chiếm đất nước ta. Họ rất đông và mạnh mẽ, giống như một cơn bão sắp ập đến vậy.\n\n*   Quân địch đến từ **nước Nam Hán** (nay thuộc Trung Quốc).\n*   Họ muốn chiếm đóng và cai trị đất nước của chúng ta.\n*   Nhân dân ta rất lo sợ, nhưng không hề muốn bị mất nước.\n\n> Tưởng tượng xem, nếu có ai đó muốn lấy đi đồ chơi yêu thích của bạn, bạn sẽ làm gì? Ông cha ta cũng đã rất quyết tâm bảo vệ đất nước mình!\n\n### "Bẫy" Trên Sông: Ý Tưởng Tuyệt Vời Của Ngô Quyền!\n\nĐể chống lại quân địch mạnh mẽ, Ngô Quyền – vị tướng tài ba của chúng ta – đã nghĩ ra một kế hoạch vô cùng thông minh và độc đáo. Đó là sử dụng chính dòng sông Bạch Đằng để làm "chiến trường"!\n\n*   Ngô Quyền cho quân lính **cắm cọc nhọn** xuống lòng sông, ẩn dưới mặt nước lúc triều lên.\n*   Khi **triều rút**, những chiếc cọc này sẽ nhô lên, sẵn sàng đâm thủng thuyền địch.\n*   Đây là một cái bẫy thiên nhiên tuyệt vời!\n\n_Giống như chúng ta giăng bẫy chuột vậy đó, nhưng là bẫy cho thuyền lớn!_\n\n### Trận Chiến Rực Lửa Trên Sông!\n\nKhi quân Nam Hán hùng hổ tiến vào sông Bạch Đằng, họ đã mắc bẫy của Ngô Quyền.\n\n*   Thuyền địch bị **đâm thủng** bởi những chiếc cọc nhọn khi nước rút.\n*   Quân ta từ hai bên bờ sông đã **tấn công dữ dội**.\n*   Trận chiến diễn ra vô cùng ác liệt, nhưng quân ta đã chiến thắng vang dội!\n\n> Tiếng reo hò vang vọng khắp sông, đánh dấu một chiến thắng vẻ vang cho dân tộc!\n\n### Ý Nghĩa Lịch Sử: Vì Sao Chúng Ta Nhớ Mãi?\n\nChiến thắng sông Bạch Đằng không chỉ là một trận đánh hay, mà nó còn mang một ý nghĩa vô cùng to lớn đối với lịch sử Việt Nam.\n\n*   Trận chiến này đã giúp **giải phóng đất nước** khỏi ách đô hộ của quân Nam Hán.\n*   Nó khẳng định ý chí **quyết tâm giữ gìn non sông** của dân tộc ta.\n*   Ngô Quyền trở thành vị vua, mở ra một thời kỳ độc lập mới cho đất nước.\n\n_Nhờ có những người anh hùng như Ngô Quyền và chiến thắng Bạch Đằng, Việt Nam chúng ta mới được tự do và phát triển cho đến ngày nay!_'
         return outline
+
+    def generate_image(self, request: ImageGenerateRequest):
+        """Generate image based on text description"""
+
+        usr_msg = self._system("image.user", {"prompt": request.prompt})
+
+        result = self.llm_executor.generate_image(
+            provider=request.provider,
+            model=request.model,
+            message=usr_msg,
+            number_of_images=request.number_of_images,
+            aspect_ratio=request.aspect_ratio,
+            safety_filter_level=request.safety_filter_level,
+            person_generation=request.person_generation,
+            seed=request.seed,
+            negative_prompt=request.negative_prompt,
+        )
+        return result
