@@ -1,9 +1,12 @@
-Generate a slide outline with the following request details:
+Create a slide-aligned lesson outline on: **{topic}**.
 
-- **Topic**: ${topic}
-- **Slide Count**: ${slide_count}
-- **Learning Objective**: Help students understand and visualize the key concepts of the **${topic}** through engaging, age-appropriate content that sparks curiosity and builds foundational knowledge
-- **Target Age**: children ages 6 to 11
-- **Language**: ${language}
+Parameters
+- Language: ${language}
+- Target age: children ages 6 to 11
+- Slide count: ${slide_count}
+- Learning objective: Students grasp the key ideas and can explain the **${topic}** simply.
 
-Please create the slide outline now.
+Requirements
+- Follow the STRICT output contract.
+- Provide exactly ${slide_count} sections with `### {Slide Title}` and 3–5 concise bullets each.
+- Return Markdown only, with no extra sections beyond the ${slide_count}.

@@ -91,7 +91,7 @@ class PromptStore:
             or {}
         )
 
-    def render(self, key: str, vars: Dict[str, Any]) -> str:
+    def render(self, key: str, vars: Dict[str, Any] | None) -> str:
         """
         Render a prompt by substituting variables into the template.
         Args:
@@ -102,6 +102,9 @@ class PromptStore:
         """
         spec = self._spec(key)
         text = self._load_text(spec.path)
+
+        if vars is None:
+            vars = {}
         merged = {**self._load_defaults(spec), **vars}
 
         # add partials (e.g., ${safety_rules}) as simple include

@@ -16,7 +16,7 @@ class ContentService:
         self.llm_executor = llm_executor or LLMExecutor()
         self.prompt_store = prompt_store or PromptStore()
 
-    def _system(self, key: str, vars: Dict[str, Any]) -> str:
+    def _system(self, key: str, vars: Dict[str, Any] | None) -> str:
         return self.prompt_store.render(key, vars)
 
     # Presentation Generation
@@ -29,7 +29,7 @@ class ContentService:
         """
         sys_msg = self._system(
             "presentation.system",
-            request.to_dict(),
+            None,
         )
 
         usr_msg = self._system(
@@ -58,7 +58,7 @@ class ContentService:
         """
         sys_msg = self._system(
             "presentation.system",
-            request.to_dict(),
+            None,
         )
 
         usr_msg = self._system(
@@ -87,7 +87,7 @@ class ContentService:
         """
         sys_msg = self._system(
             "outline.system",
-            request.to_dict(),
+            None,
         )
 
         usr_msg = self._system(
@@ -115,7 +115,7 @@ class ContentService:
         """
         sys_msg = self._system(
             "outline.system",
-            request.to_dict(),
+            None,
         )
 
         usr_msg = self._system(
