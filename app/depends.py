@@ -13,8 +13,6 @@ def get_logger():
 
 def get_content_service(request: Request) -> ContentService:
     """Get the content service with the default model."""
-    model_name = request.app.state.settings.default_model
-    get_logger().info(f"Using model: {model_name}")
     return request.app.state.content_service
 
 

@@ -5,13 +5,13 @@ from pydantic import BaseModel, Field, field_validator
 
 # Request and Response models for outline generation
 class OutlineGenerateRequest(BaseModel):
-    topic: str
-    model: str
-    provider: str
-    language: str
-    slide_count: int
-    learning_objective: str
-    target_age: str
+    topic: str = Field(..., description="The topic for the presentation")
+    model: str = Field(..., description="The model to use for generation")
+    provider: str = Field(..., description="The provider of the model")
+    language: str = Field(..., description="The language for the presentation")
+    slide_count: int = Field(
+        ..., description="The number of slides to generate"
+    )
 
     def to_dict(self):
         return {
@@ -20,20 +20,18 @@ class OutlineGenerateRequest(BaseModel):
             "provider": self.provider,
             "language": self.language,
             "slide_count": self.slide_count,
-            "learning_objective": self.learning_objective,
-            "target_age": self.target_age,
         }
 
 
 # Request and Response models for presentation generation
 class PresentationGenerateRequest(BaseModel):
-    model: str
-    provider: str
-    language: str
-    slide_count: int
-    learning_objective: str
-    target_age: str
-    outline: str
+    model: str = Field(..., description="The model to use for generation")
+    provider: str = Field(..., description="The provider of the model")
+    language: str = Field(..., description="The language for the presentation")
+    slide_count: int = Field(
+        ..., description="The number of slides to generate"
+    )
+    outline: str = Field(..., description="The outline for the presentation")
 
     def to_dict(self):
         return {
@@ -41,7 +39,5 @@ class PresentationGenerateRequest(BaseModel):
             "provider": self.provider,
             "language": self.language,
             "slide_count": self.slide_count,
-            "learning_objective": self.learning_objective,
-            "target_age": self.target_age,
             "outline": self.outline,
         }

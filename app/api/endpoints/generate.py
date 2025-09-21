@@ -60,6 +60,7 @@ def generatePresentation_Stream(
 def generateOutline_Mock(
     svc: ContentServiceDep, outlineGenerateRequest: OutlineGenerateRequest
 ) -> str:
+    print("Received mock stream request:", outlineGenerateRequest)
     result = svc.make_outline_mock(outlineGenerateRequest)
     return result
 
@@ -70,6 +71,7 @@ def generateOutline_Mock_Stream(
     outlineGenerateRequest: OutlineGenerateRequest,
     svc: ContentServiceDep,
 ):
+    print("Received mock stream request:", outlineGenerateRequest)
     result = svc.make_outline_stream_mock()
 
     return StreamingResponse(

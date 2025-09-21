@@ -1,9 +1,20 @@
-Generate a presentation based on the following request details:
+Transform this approved outline into a kid-friendly slide deck using the given templates.
 
-- **Slide Count**: {{ slide_count }}
-- **Learning Objective**: {{ learning_objective }}
-- **Target Age**: {{ targetAge }}
-- **Language**: {{ language }}
-- **Outline**: {{ outline }}
+Inputs:
+- Language: ${language}
+- Target age: children ages 6 to 11
+- Slide count: ${slide_count}
+- Learning objective: Students can understand the key ideas of the presentation and can explain it easily.
 
-Please create the full presentation slides now.
+Approved outline (Markdown):
+---
+${outline}
+---
+
+Requirements:
+- Follow the STRICT output contract.
+- Produce exactly ${slide_count} slides.
+- Choose the most suitable template for each slide.
+- Use <em> or <strong> once per slide for emphasis.
+- Include a one-sentence conclusion per slide as specified (inline in an allowed field).
+- Return only the JSON object, with no text before or after.

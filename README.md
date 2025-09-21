@@ -163,22 +163,65 @@ The CI pipeline automatically:
 - Validates code quality
 - Tests application startup
 
-## Test with curl
-
-```bash
-curl -X POST "http://localhost:8080/api/v1/outline/generate"
-    -H "Content-Type: application/json"
-    -d '{
-    "topic": "Introduction to Tắt đèn of Ngô Tất Tố",
-    "slide_count": 5,
-    "audience": "university students",
-    "model": "gemini-2.5-flash-lite",
-    "learning_objective": "",
-    "language": "vi",
-    "targetAge": "5-10"
-    }'
-```
-
+## API Manual Testing
+### With curl
+#### Generate outline:
+- Batch response:
+   ```bash
+   curl -X POST "http://localhost:8080/api/outline/generate"
+      -H "Content-Type: application/json"
+      -d '{
+         "topic": "Introduction to Tắt đèn of Ngô Tất Tố",
+         "slide_count": 5,
+         "model": "gemini-2.5-flash-lite",
+         "language": "vi",
+         "provider": "google"
+      }'
+   ```
+- Stream response:
+   ```bash
+   curl -N -X POST "http://localhost:8080/api/outline/generate/stream"
+      -H "Content-Type: application/json"
+      -d '{
+         "topic": "Introduction to Tắt đèn of Ngô Tất Tố",
+         "slide_count": 5,
+         "model": "gemini-2.5-flash-lite",
+         "language": "vi",
+         "provider": "google",
+      }'
+   ```
+#### Presentation generate
+- Batch response:
+   ```bash
+   curl -X POST "http://localhost:8080/api/presentation/generate"
+      -H "Content-Type: application/json"
+      -d '{
+            "outline": "```md\n# Introduction to Artificial Intelligence\n• What is AI?\n• Why AI matters in today&apos;s world\n• Overview of presentation goals\n\n# History and Evolution of AI\n• Early concepts and origins (1940s-1950s)\n• The AI winters and revivals\n• Major breakthroughs and milestones\n• Key pioneers and their contributions\n\n# Types and Categories of AI\n• Narrow AI vs General AI\n• Machine Learning fundamentals\n• Deep Learning and Neural Networks\n• Natural Language Processing\n• Computer Vision\n\n# Real-World Applications of AI\n• Healthcare and medical diagnosis\n• Transportation and autonomous vehicles\n• Finance and fraud detection\n• Entertainment and recommendation systems\n• Smart homes and IoT devices\n\n# Future of AI and Emerging Trends\n• Ethical considerations and responsible AI\n• AI governance and regulation\n• Potential societal impacts\n• Career opportunities in AI\n• Preparing for an AI-driven future\n```",
+            "provider": "google",
+            "slide_count": 5,
+            "model": "gemini-2.5-flash-lite",
+            "language": "vi"
+        }'
+   ```
+- Stream response:
+   ```bash
+   curl -N -X POST "http://localhost:8080/api/presentation/generate/stream"
+      -H "Content-Type: application/json"
+      -d '{
+            "outline": "```md\n# Introduction to Artificial Intelligence\n• What is AI?\n• Why AI matters in today&apos;s world\n• Overview of presentation goals\n\n# History and Evolution of AI\n• Early concepts and origins (1940s-1950s)\n• The AI winters and revivals\n• Major breakthroughs and milestones\n• Key pioneers and their contributions\n\n# Types and Categories of AI\n• Narrow AI vs General AI\n• Machine Learning fundamentals\n• Deep Learning and Neural Networks\n• Natural Language Processing\n• Computer Vision\n\n# Real-World Applications of AI\n• Healthcare and medical diagnosis\n• Transportation and autonomous vehicles\n• Finance and fraud detection\n• Entertainment and recommendation systems\n• Smart homes and IoT devices\n\n# Future of AI and Emerging Trends\n• Ethical considerations and responsible AI\n• AI governance and regulation\n• Potential societal impacts\n• Career opportunities in AI\n• Preparing for an AI-driven future\n```",
+            "provider": "google",
+            "slide_count": 5,
+            "model": "gemini-2.5-flash-lite",
+            "language": "vi"
+        }'
+   ```
+### With web UI
+- First, `cd web_test_api` folder
+- Then run:
+   ```bash
+     python3 -m http.server 3000
+   ```
+- Access to `localhost:3000` in your browser
 ## Folder structure
 
 ```bash
