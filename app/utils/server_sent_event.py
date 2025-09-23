@@ -12,7 +12,9 @@ async def sse_word_by_word(request, generator: Generator[Any, Any, None]):
     # Each chunk is a statement, split it word by word
     for chunk in generator:
         if chunk != "":
-            encoded = str(base64.b64encode(str(chunk).encode("utf-8")).decode("ascii"))
+            encoded = str(
+                base64.b64encode(str(chunk).encode("utf-8")).decode("ascii")
+            )
             yield {"data": encoded}
 
 

@@ -403,4 +403,4 @@ websockets==15.0.1
 yarl==1.20.1
     # via aiohttp
 zstandard==0.25.0
-sse-starlette==3.0.2    # via langsmith
+    # via langsmith
