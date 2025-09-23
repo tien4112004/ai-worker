@@ -181,4 +181,3 @@ service-account.json
 # Local environment variables
 requirements-dev.txt
 requirements-test.txt
-

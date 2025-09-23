@@ -1,8 +1,9 @@
+import base64
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
-import base64
 from sse_starlette.sse import EventSourceResponse
-import json
 
 from app.depends import ContentServiceDep
 from app.schemas.image_content import (
@@ -55,7 +56,7 @@ def generatePresentation_Stream(
     print("Received mock stream request:", presentationGenerateRequest)
 
     result = svc.make_presentation_stream(presentationGenerateRequest)
-    
+
     return EventSourceResponse(sse_json_by_json(request, result), ping=None)
 
 
@@ -76,11 +77,14 @@ async def generateOutline_Mock_Stream(
     svc: ContentServiceDep,
 ):
     print("Received mock stream request:", outlineGenerateRequest)
+
     async def event_stream():
         for chunk in svc.make_outline_stream_mock():
             if await request.is_disconnected():
                 break
-            yield {"data": base64.b64encode(chunk.encode("utf-8")).decode("ascii")}
+            yield {
+                "data": base64.b64encode(chunk.encode("utf-8")).decode("ascii")
+            }
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
@@ -110,10 +114,6 @@ async def generatePresentation_Mock_Stream(
             yield f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
-    result = svc.make_presentation_stream_mock()
-    return StreamingResponse(
-        sse_json_by_json(request, result), media_type="text/event-stream"
-    )
 
 
 @router.post("/image/generate", response_model=ImageGenerateResponse)

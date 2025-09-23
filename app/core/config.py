@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
 
     # VertexAI Configuration
-    service_account_json: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "./service_account.json")
+    service_account_json: str = os.getenv(
+        "GOOGLE_APPLICATION_CREDENTIALS", "./service_account.json"
+    )
     project_id: str = os.getenv("VERTEX_PROJECT_ID", "")
     location: str = os.getenv("VERTEX_LOCATION", "us-central1")
 
