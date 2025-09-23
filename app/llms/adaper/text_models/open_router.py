@@ -37,7 +37,7 @@ class OpenRouterAdapter:
 
         return resp
 
-    async def stream(self, model: str, messages: List[BaseMessage], **params):
+    def stream(self, model: str, messages: List[BaseMessage], **params):
         resp = self.client.stream(input=messages, model=model, **params)
 
         for chunk in resp:
