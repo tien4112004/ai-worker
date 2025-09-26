@@ -97,7 +97,7 @@ CONTAINER_NAME="ai-worker-test-$(date +%s)"
 # Start container for testing
 docker run -d \
     --name "$CONTAINER_NAME" \
-    -p 8081:8080 \
+    -p 8081:8081 \
     -e GOOGLE_API_KEY=test_key \
     -e OPENAI_API_KEY=test_key \
     -e ANTHROPIC_API_KEY=test_key \
@@ -108,7 +108,7 @@ if [[ $? -eq 0 ]]; then
 
     # Wait for container to be healthy
     for i in {1..30}; do
-        if docker exec "$CONTAINER_NAME" curl -f http://localhost:8080/docs > /dev/null 2>&1; then
+        if docker exec "$CONTAINER_NAME" curl -f http://localhost:8081/docs > /dev/null 2>&1; then
             success "Container health check passed"
             break
         fi
@@ -157,7 +157,7 @@ fi
 
 success "Build process completed successfully!"
 log "You can now run the image with:"
-log "  docker run -p 8080:8080 --env-file .env $TAG"
+log "  docker run -p 8081:8081 --env-file .env $TAG"
 log ""
 log "Or use docker-compose:"
 log "  docker-compose up --build"

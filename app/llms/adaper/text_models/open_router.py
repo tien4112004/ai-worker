@@ -2,7 +2,7 @@ import os
 from typing import List
 
 from dotenv import load_dotenv
-from langchain.chat_models.openai import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain_core.messages import BaseMessage
 
 
