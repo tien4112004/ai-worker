@@ -4,20 +4,56 @@ import re
 from typing import Any, Generator
 
 
+# VIBE CODE
 async def sse_word_by_word(request, generator: Generator[Any, Any, None]):
     print("Starting SSE word by word")
     if await request.is_disconnected():
         print("Client disconnected")
         return
-    # Each chunk is a statement, split it word by word
-    for chunk in generator:
-        if chunk != "":
-            encoded = str(
-                base64.b64encode(str(chunk).encode("utf-8")).decode("ascii")
-            )
+
+    buffer = ""
+
+    try:
+        for chunk in generator:
+            if await request.is_disconnected():
+                print("Client disconnected during streaming")
+                return
+
+            if chunk:
+                buffer += str(chunk)
+
+                # Split text preserving spaces and newlines
+                # This regex splits on word boundaries but keeps the separators
+                tokens = re.split(r"(\s+)", buffer)
+
+                # Process all tokens except the last one (which might be incomplete)
+                if len(tokens) > 1:
+                    complete_tokens = tokens[:-1]
+                    buffer = tokens[-1]  # Keep the last token in buffer
+
+                    for token in complete_tokens:
+                        if (
+                            token
+                        ):  # Don't skip empty tokens as they might be important whitespace
+                            encoded = base64.b64encode(
+                                token.encode("utf-8")
+                            ).decode("ascii")
+                            yield {"data": encoded}
+
+        # Yield any remaining content in buffer
+        if buffer:
+            encoded = base64.b64encode(buffer.encode("utf-8")).decode("ascii")
             yield {"data": encoded}
 
+    except Exception as e:
+        print(f"Error in word-by-word streaming: {e}")
+        error_encoded = base64.b64encode(
+            f"Error: {str(e)}".encode("utf-8")
+        ).decode("ascii")
+        yield {"data": error_encoded}
 
+
+# VIBE CODE
 async def sse_json_by_json(request, generator: Generator[Any, Any, None]):
     """Stream JSON objects one at a time in SSE format."""
     print("Starting SSE JSON by JSON streaming")
