@@ -1,3 +1,4 @@
+import os
 from typing import Any, Dict, Generator
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -280,3 +281,18 @@ class ContentService:
             negative_prompt=request.negative_prompt,
         )
         return result
+
+    def generate_image_mock(self, request: ImageGenerateRequest):
+        """Generate mock image data for testing purposes."""
+        # For simplicity, return a list of placeholder base64 strings
+        # read file image_mock.txt
+        with open(
+            "/home/scider/Code/ai-worker/app/services/image_mock.txt", "r"
+        ) as f:
+            mock_image_data = f.read().strip()
+        images = [mock_image_data for _ in range(request.number_of_images)]
+        return {
+            "images": images,
+            "count": request.number_of_images,
+            "error": None,
+        }
