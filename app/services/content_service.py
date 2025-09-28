@@ -1,3 +1,4 @@
+import base64
 import os
 from typing import Any, Dict, Generator
 
@@ -284,12 +285,9 @@ class ContentService:
 
     def generate_image_mock(self, request: ImageGenerateRequest):
         """Generate mock image data for testing purposes."""
-        # For simplicity, return a list of placeholder base64 strings
-        # read file image_mock.txt
-        with open(
-            "/home/scider/Code/ai-worker/app/services/image_mock.txt", "r"
-        ) as f:
-            mock_image_data = f.read().strip()
+        with open("app/services/image_mock.png", "rb") as f:
+            mock_image_data = base64.b64encode(f.read()).decode("utf-8")
+
         images = [mock_image_data for _ in range(request.number_of_images)]
         return {
             "images": images,
