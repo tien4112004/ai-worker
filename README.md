@@ -18,7 +18,7 @@
 1. **Prepare virtual environment** (recommended)
 
 ```bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 ```
 

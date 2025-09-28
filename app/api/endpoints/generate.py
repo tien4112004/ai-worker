@@ -124,3 +124,23 @@ def generate_image(
         "count": result["count"],
         "error": None,
     }
+
+
+@router.post("/image/generate/mock", response_model=ImageGenerateResponse)
+def generate_image_mock(
+    imageGenerateRequest: ImageGenerateRequest, svc: ContentServiceDep
+):
+    print("Received mock image generation request:", imageGenerateRequest)
+
+    result = svc.generate_image_mock(imageGenerateRequest)
+    if "error" in result and result["error"]:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=result["error"],
+        )
+
+    return {
+        "images": result["images"],
+        "count": result["count"],
+        "error": None,
+    }

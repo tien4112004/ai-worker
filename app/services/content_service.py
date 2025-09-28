@@ -1,3 +1,5 @@
+import base64
+import os
 from typing import Any, Dict, Generator
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -280,3 +282,15 @@ class ContentService:
             negative_prompt=request.negative_prompt,
         )
         return result
+
+    def generate_image_mock(self, request: ImageGenerateRequest):
+        """Generate mock image data for testing purposes."""
+        with open("app/services/image_mock.png", "rb") as f:
+            mock_image_data = base64.b64encode(f.read()).decode("utf-8")
+
+        images = [mock_image_data for _ in range(request.number_of_images)]
+        return {
+            "images": images,
+            "count": request.number_of_images,
+            "error": None,
+        }
