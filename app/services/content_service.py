@@ -152,11 +152,7 @@ class ContentService:
         result = '```json\n{\n  "slides": [\n    {\n      "type": "main_image",\n      "data": {\n        "image": "Children looking excitedly at an old map of Vietnam with a river highlighted",\n        "content": "Giới thiệu: Một Cuộc Phiêu Lưu Lịch Sử Về Sông Bạch Đằng!"\n      }\n    },\n    {\n      "type": "two_column_with_image",\n      "title": "Ai Đã Xâm Lược Nước Ta?",\n      "data": {\n        "items": [\n          "Quân địch đến từ nước Nam Hán.",\n          "Họ muốn chiếm đất nước ta.",\n          "Nhân dân ta không muốn bị mất nước."\n        ],\n        "image": "Illustration of ancient Chinese warships sailing towards Vietnamese shores"\n      }\n    },\n    {\n      "type": "two_column_with_image",\n      "title": "\\"Bẫy\\" Trên Sông: Ý Tưởng Của Ngô Quyền!",\n      "data": {\n        "items": [\n          "Ngô Quyền cho cắm cọc nhọn dưới sông.",\n          "Cọc ẩn dưới nước lúc triều lên.",\n          "Nhô lên đâm thủng thuyền địch khi nước rút."\n        ],\n        "image": "Illustration of a wooden stake hidden underwater in a river with a boat approaching"\n      }\n    },\n    {\n      "type": "two_column_with_image",\n      "title": "Trận Chiến Rực Lửa Trên Sông!",\n      "data": {\n        "items": [\n          "Thuyền địch mắc bẫy, bị đâm thủng.",\n          "Quân ta tấn công từ hai bên bờ.",\n          "Chiến thắng vang dội cho dân tộc!"\n        ],\n        "image": "Illustration of Vietnamese soldiers attacking enemy ships from the riverbanks during a battle"\n      }\n    },\n    {\n      "type": "main_image",\n      "data": {\n        "image": "Illustration of a proud Vietnamese flag waving over a peaceful landscape",\n        "content": "Chiến thắng Bạch Đằng giúp đất nước ta mãi mãi tự do!"\n      }\n    }\n  ]\n}\n```'
         return result
 
-    def make_presentation_stream_mock(self):
-        """Generate mock slide content stream for testing purposes.
-        Yields:
-            str: Parts of the mock slide content.
-        """
+    async def make_presentation_stream_mock(self):
         slides = [
             {
                 "type": "main_image",
@@ -210,23 +206,8 @@ class ContentService:
             },
         ]
 
-        import json
-        import re
-        import time
-
-        # Create the complete JSON structure
-        complete_json = {"slides": slides}
-
-        # Convert to JSON string
-        json_str = json.dumps(complete_json, ensure_ascii=False, indent=2)
-
-        # Split into meaningful chunks (words, punctuation, and whitespace)
-        chunks = re.findall(r"\S+|\s+", json_str)
-
-        for chunk in chunks:
-            # Add a small delay to simulate streaming
-            time.sleep(0.01)
-            yield chunk
+        for slide in slides:
+            yield slide
 
     def make_outline_stream_mock(self) -> Generator[str, None, None]:
         """Generate mock outline stream for testing purposes.

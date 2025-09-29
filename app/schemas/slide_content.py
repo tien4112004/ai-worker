@@ -32,6 +32,9 @@ class PresentationGenerateRequest(BaseModel):
         ..., description="The number of slides to generate"
     )
     outline: str = Field(..., description="The outline for the presentation")
+    meta_data: dict | None = Field(
+        None, description="Additional metadata for the presentation"
+    )
 
     def to_dict(self):
         return {
@@ -40,4 +43,5 @@ class PresentationGenerateRequest(BaseModel):
             "language": self.language,
             "slide_count": self.slide_count,
             "outline": self.outline,
+            "meta_data": self.meta_data,
         }

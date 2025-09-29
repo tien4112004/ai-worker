@@ -13,7 +13,7 @@ class LLMExecutor:
             "google": GeminiAdapter,
             "openrouter": OpenRouterAdapter,
         }
-        self.image_adapters = {"google": GeminiImageAdapter}
+        self.image_adapters = {"google": ImagenAdapter}
 
     def _adapter(self, provider: str):
         if provider in self.adapters:
