@@ -1,5 +1,7 @@
 import base64
 import os
+import random
+from asyncio import sleep
 from typing import Any, Dict, Generator
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -266,6 +268,7 @@ class ContentService:
 
     def generate_image_mock(self, request: ImageGenerateRequest):
         """Generate mock image data for testing purposes."""
+        sleep(random.uniform(0.3, 1.5))  # Simulate some processing delay
         with open("app/services/image_mock.png", "rb") as f:
             mock_image_data = base64.b64encode(f.read()).decode("utf-8")
 
