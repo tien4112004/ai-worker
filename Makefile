@@ -1,8 +1,15 @@
 .PHONY: setup install-dev compile-deps upgrade-deps sync-deps run test test-with-coverage build clean
 
+venv:
+	python -m venv venv
+	source venv/bin/activate
+	pip install --upgrade pip
+
 # Development setup
-setup: compile-deps sync-deps
-	cp .env.sample .env
+setup:
+	pip install pip-tools
+	make compile-deps
+	make sync-deps
 	bash scripts/setup-pre-commit.sh
 
 # Compile requirements files from .in files
@@ -31,6 +38,10 @@ install-test:
 
 # Run the application
 run:
+	python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8081
+
+# Run the application with default port
+run-default:
 	python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 
 # Run tests
