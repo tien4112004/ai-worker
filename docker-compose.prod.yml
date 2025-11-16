@@ -1,0 +1,57 @@
+version: "3.8"
+
+# Production Docker Compose configuration
+# Use this for deploying to production environments
+
+services:
+  ai-worker:
+    container_name: ai-worker-prod
+    image: ghcr.io/tien4112004/ai-worker:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - APP_NAME=ai-worker
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-gemini-2.5-flash-lite}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-2048}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - ALLOWED_CREDENTIALS=${ALLOWED_CREDENTIALS:-true}
+      - ALLOWED_METHODS=${ALLOWED_METHODS:-*}
+      - ALLOWED_HEADERS=${ALLOWED_HEADERS:-*}
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # API Keys
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - VERTEX_PROJECT_ID=${VERTEX_PROJECT_ID}
+      - VERTEX_LOCATION=${VERTEX_LOCATION}
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ai-worker-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "1"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  network-aiprimary:
+    driver: bridge

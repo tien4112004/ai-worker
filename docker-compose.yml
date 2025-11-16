@@ -3,7 +3,12 @@ version: "3.8"
 services:
   ai-worker:
     container_name: ai-worker
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PYTHON_VERSION=3.11
+    image: ai-worker:latest
     ports:
       - "8081:8081"
     environment:
@@ -11,14 +16,20 @@ services:
       - DEFAULT_MODEL=gemini-2.5-flash-lite
       - LLM_TEMPERATURE=0.7
       - LLM_MAX_TOKENS=2048
+      - MAX_RETRIES=3
       - ALLOWED_ORIGINS=http://localhost:8080
       - ALLOWED_CREDENTIALS=true
       - ALLOWED_METHODS=*
       - ALLOWED_HEADERS=*
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
     env_file:
       - .env
     volumes:
+      # Mount app code for development (remove in production)
       - ./app:/app/app:ro
+      # Mount prompts directory
+      - ./app/prompts:/app/app/prompts:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/docs"]
@@ -26,9 +37,37 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - ai-worker-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "1"
+          memory: 256M
+
+  # Optional: Redis for caching (if needed in the future)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: ai-worker-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 3
+  #   networks:
+  #     - ai-worker-network
 
 volumes:
   redis_data:
+    driver: local
 
 networks:
   default:
