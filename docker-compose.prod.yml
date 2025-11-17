@@ -5,10 +5,13 @@ version: "3.8"
 
 services:
   ai-worker:
-    container_name: ai-worker-prod
+    container_name: ai-worker-aiprimary
     image: ghcr.io/tien4112004/ai-worker:latest
     ports:
-      - "8081:8081"
+      - "8083:8081"
+    volumes:
+      # Mount service account key file
+      - /opt/ai-worker/secrets/gcp-service-account.json:/app/secrets/gcp-service-account.json:ro
     environment:
       - APP_NAME=ai-worker
       - DEFAULT_MODEL=${DEFAULT_MODEL:-gemini-2.5-flash-lite}
@@ -21,17 +24,19 @@ services:
       - ALLOWED_HEADERS=${ALLOWED_HEADERS:-*}
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      # Google Cloud Service Account
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/gcp-service-account.json
       # API Keys
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
-      - VERTEX_PROJECT_ID=${VERTEX_PROJECT_ID}
-      - VERTEX_LOCATION=${VERTEX_LOCATION}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - VERTEX_PROJECT_ID=${VERTEX_PROJECT_ID:-}
+      - VERTEX_LOCATION=${VERTEX_LOCATION:-}
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8081/health || curl -f http://localhost:8081/docs || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/docs"]
       interval: 30s
       timeout: 10s
       retries: 3
