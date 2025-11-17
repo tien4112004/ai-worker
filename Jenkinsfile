@@ -135,8 +135,9 @@ pipeline {
                         # Copy docker-compose file to deploy directory
                         cp ${WORKSPACE}/${DOCKER_COMPOSE_FILE} ${DEPLOY_DIR}/
 
+# TODO: Fix this
                         # Copy any additional config files if needed
-                        # cp ${WORKSPACE}/config/* ${DEPLOY_DIR}/config/ 2>/dev/null || true
+                        # cp ${WORKSPACE}/secrets/* ${DEPLOY_DIR}/ 2>/dev/null || true
 
                         echo "Configuration copied to ${DEPLOY_DIR}"
                         echo "Files in deploy directory:"
@@ -194,7 +195,7 @@ pipeline {
                         echo "Checking API health..."
 
                         # Try to reach the API health endpoint
-                        until curl -sf http://localhost:8000/health > /dev/null 2>&1 || curl -sf http://localhost:8000/docs > /dev/null 2>&1; do
+                        until curl -sf http://localhost:8000/docs > /dev/null 2>&1; do
                             counter=$((counter + 1))
                             if [ $counter -gt $timeout ]; then
                                 echo "WARNING: API failed to respond within ${timeout} seconds"
@@ -203,7 +204,7 @@ pipeline {
                                 break
                             fi
                             echo "Waiting for API to be ready... ($counter/$timeout)"
-                            sleep 2
+                            sleep 5
                         done
 
                         if [ $counter -le $timeout ]; then
