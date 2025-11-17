@@ -195,7 +195,7 @@ pipeline {
                         echo "Checking API health..."
 
                         # Try to reach the API health endpoint
-                        until curl -sf http://localhost:8000/docs > /dev/null 2>&1; do
+                        until curl -sf http://localhost:8083/docs > /dev/null 2>&1; do
                             counter=$((counter + 1))
                             if [ $counter -gt $timeout ]; then
                                 echo "WARNING: API failed to respond within ${timeout} seconds"
