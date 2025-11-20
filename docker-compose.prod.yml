@@ -7,8 +7,8 @@ services:
   ai-worker:
     container_name: ai-worker-aiprimary
     image: ghcr.io/tien4112004/ai-worker:latest
-    ports:
-      - "8083:8081"
+    expose:
+      - "8081"
     volumes:
       # Mount service account key file
       - /opt/ai-worker/secrets/gcp-service-account.json:/app/secrets/gcp-service-account.json:ro
@@ -60,3 +60,4 @@ services:
 networks:
   network-aiprimary:
     driver: bridge
+    external: true
