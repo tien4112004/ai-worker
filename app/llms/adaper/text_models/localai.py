@@ -1,31 +1,17 @@
-import os
 from typing import List
 
-from dotenv import load_dotenv
 from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
+
+from app.core.config import settings
 
 
 class LocalAIAdapter:
     def __init__(self, model_name: str, **params):
-        load_dotenv()
-
-        localai_base_url = os.getenv(
-            "LOCALAI_BASE_URL", "http://localhost:8083"
-        )
-        localai_api_key = os.getenv("LOCALAI_API_KEY", "sk-local")
-
-        if not localai_base_url:
-            raise ValueError(
-                "LOCALAI_BASE_URL must be set in env or defaults to http://localhost:8083"
-            )
-
-        # Initialize the ChatOpenAI client with LocalAI endpoint
-        # LocalAI uses OpenAI-compatible API at /v1 endpoint
         self.client = ChatOpenAI(
             model=model_name,
-            base_url=f"{localai_base_url}/v1",
-            api_key=localai_api_key,
+            base_url=f"{settings.localai_base_url}/v1",
+            api_key=settings.localai_api_key,
             **params,
         )
 

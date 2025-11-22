@@ -44,7 +44,11 @@ class Settings(BaseSettings):
         os.getenv("ALLOWED_CREDENTIALS", "True").lower() == "true"
     )
 
-    logger: ClassVar[logging.Logger] = logging.getLogger("uvicorn.error")
+    # LocalAI Configuration
+    localai_base_url: str = os.getenv(
+        "LOCALAI_BASE_URL", "http://localhost:8083"
+    )
+    localai_api_key: str = os.getenv("LOCALAI_API_KEY", "sk-local")
 
     model_config = SettingsConfigDict(
         env_file=".env", env_prefix="", extra="allow"
