@@ -89,8 +89,7 @@ pipeline {
                     echo "========== Pulling Latest Docker Image =========="
 
                     sh '''
-                        docker pull ${IMAGE_NAME}:latest || true
-                        docker pull ${IMAGE_NAME}:main || true
+                        docker pull ${IMAGE_NAME}:latest
 
                         # Show image info
                         docker image inspect ${IMAGE_NAME}:latest 2>/dev/null || echo "Image not found locally"
@@ -108,15 +107,15 @@ pipeline {
                         cd ${DEPLOY_DIR}
 
                         if [ -f "${DOCKER_COMPOSE_FILE}" ]; then
-                            docker compose -f ${DOCKER_COMPOSE_FILE} down || true
+                            docker compose -f ${DOCKER_COMPOSE_FILE} down
                             echo "AI Worker service stopped via compose"
                         fi
 
                         # Force stop container if compose didn't work
                         if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
                             echo "Force stopping container ${CONTAINER_NAME}..."
-                            docker stop ${CONTAINER_NAME} || true
-                            docker rm ${CONTAINER_NAME} || true
+                            docker stop ${CONTAINER_NAME}
+                            docker rm ${CONTAINER_NAME}
                         fi
                     '''
                 }
@@ -135,7 +134,6 @@ pipeline {
                         # Copy docker-compose file to deploy directory
                         cp ${WORKSPACE}/${DOCKER_COMPOSE_FILE} ${DEPLOY_DIR}/
 
-# TODO: Fix this
                         # Copy any additional config files if needed
                         # cp ${WORKSPACE}/secrets/* ${DEPLOY_DIR}/ 2>/dev/null || true
 
@@ -189,53 +187,37 @@ pipeline {
 
                         echo "✓ Container is running"
 
-                        # Wait for the service to be ready
+                        # Wait for the service to be healthy
                         timeout=60
                         counter=0
-                        echo "Checking API health..."
+                        echo "Checking container health status..."
 
-                        # Try to reach the API health endpoint
-                        until curl -sf http://localhost:8083/docs > /dev/null 2>&1; do
-                            counter=$((counter + 1))
-                            if [ $counter -gt $timeout ]; then
-                                echo "WARNING: API failed to respond within ${timeout} seconds"
-                                echo "Container logs:"
-                                docker logs --tail 50 ${CONTAINER_NAME}
+                        while [ $counter -lt $timeout ]; do
+                            HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' ${CONTAINER_NAME})
+
+                            if [ "$HEALTH_STATUS" = "healthy" ]; then
+                                echo "✓ Container is healthy"
                                 break
+                            elif [ "$HEALTH_STATUS" = "unhealthy" ]; then
+                                echo "ERROR: Container is unhealthy"
+                                docker logs --tail 50 ${CONTAINER_NAME}
                             fi
-                            echo "Waiting for API to be ready... ($counter/$timeout)"
+
+                            echo "Waiting for container to be healthy... Current status: ${HEALTH_STATUS} ($counter/$timeout)"
                             sleep 5
+                            counter=$((counter + 1))
                         done
 
-                        if [ $counter -le $timeout ]; then
-                            echo "✓ API is responding"
+                        if [ $counter -ge $timeout ]; then
+                            echo "WARNING: Health check timed out after ${timeout} seconds"
+                            echo "Container logs:"
+                            docker logs --tail 50 ${CONTAINER_NAME}
+                            exit 1
                         fi
 
                         # Show recent logs
                         echo "========== Recent Container Logs =========="
                         docker logs --tail 20 ${CONTAINER_NAME}
-                    '''
-                }
-            }
-        }
-
-        stage('Cleanup Old Images') {
-            when {
-                branch 'main'
-            }
-            steps {
-                script {
-                    echo "========== Cleaning Up Old Docker Images =========="
-
-                    sh '''
-                        # Remove dangling images
-                        docker image prune -f || true
-
-                        # Remove unused volumes
-                        docker volume prune -f || true
-
-                        # Show disk usage
-                        docker system df
                     '''
                 }
             }
@@ -318,6 +300,21 @@ pipeline {
         cleanup {
             script {
                 echo "Cleaning up workspace..."
+
+                if (env.BRANCH_NAME == 'main') {
+                    echo "========== Cleaning Up Old Docker Images =========="
+                    sh '''
+                        # Remove dangling images
+                        docker image prune -f
+
+                        # Remove unused volumes
+                        docker volume prune -f
+
+                        # Show disk usage
+                        docker system df
+                    '''
+                }
+
                 // Uncomment if you want to clean workspace after each build
                 // cleanWs()
             }
