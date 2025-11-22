@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from app.llms.adaper.image_models.imagen import ImagenAdapter
 from app.llms.adaper.text_models.gemini import GeminiAdapter
-from app.llms.adaper.text_models.ollama import OllamaAdapter
+from app.llms.adaper.text_models.localai import LocalAIAdapter
 from app.llms.adaper.text_models.open_router import OpenRouterAdapter
 from app.llms.adaper.text_models.openai import OpenAIAdapter
 
@@ -13,7 +13,7 @@ class LLMExecutor:
             "openai": OpenAIAdapter,
             "google": GeminiAdapter,
             "openrouter": OpenRouterAdapter,
-            "ollama": OllamaAdapter,
+            "localai": LocalAIAdapter,
         }
         self.image_adapters = {"google": ImagenAdapter}
 

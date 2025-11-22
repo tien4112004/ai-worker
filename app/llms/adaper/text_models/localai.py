@@ -2,24 +2,31 @@ import os
 from typing import List
 
 from dotenv import load_dotenv
-from langchain_community.chat_models import ChatOllama
 from langchain_core.messages import BaseMessage
+from langchain_openai import ChatOpenAI
 
 
-class OllamaAdapter:
+class LocalAIAdapter:
     def __init__(self, model_name: str, **params):
         load_dotenv()
 
-        ollama_base_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
+        localai_base_url = os.getenv(
+            "LOCALAI_BASE_URL", "http://localhost:8083"
+        )
+        localai_api_key = os.getenv("LOCALAI_API_KEY", "sk-local")
 
-        if not ollama_base_url:
+        if not localai_base_url:
             raise ValueError(
-                "OLLAMA_URL must be set in env or defaults to http://localhost:11434"
+                "LOCALAI_BASE_URL must be set in env or defaults to http://localhost:8083"
             )
 
-        # Initialize the ChatOllama client
-        self.client = ChatOllama(
-            model=model_name, base_url=ollama_base_url, **params
+        # Initialize the ChatOpenAI client with LocalAI endpoint
+        # LocalAI uses OpenAI-compatible API at /v1 endpoint
+        self.client = ChatOpenAI(
+            model=model_name,
+            base_url=f"{localai_base_url}/v1",
+            api_key=localai_api_key,
+            **params,
         )
 
     def run(self, model: str, messages: List[BaseMessage], **params) -> str:
