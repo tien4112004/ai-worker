@@ -54,6 +54,8 @@ class Settings(BaseSettings):
         env_file=".env", env_prefix="", extra="allow"
     )
 
+    logger: ClassVar[logging.Logger] = logging.getLogger("uvicorn.error")
+
 
 logging.basicConfig(
     level=logging.INFO,

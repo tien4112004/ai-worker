@@ -20,7 +20,6 @@ services:
       PRELOAD_MODELS: ""
     volumes:
       - localai_config:/home/localai/.local-ai/configuration
-      - localai_models:/home/localai/.local-ai/models
     deploy:
       resources:
         limits:
