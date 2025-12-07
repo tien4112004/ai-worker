@@ -9,6 +9,7 @@ from app.schemas.image_content import (
     ImageGenerateRequest,
     ImageGenerateResponse,
 )
+from app.schemas.mindmap_content import MindmapGenerateRequest
 from app.schemas.slide_content import (
     OutlineGenerateRequest,
     PresentationGenerateRequest,
@@ -153,3 +154,23 @@ def generate_image_mock(
         "count": result["count"],
         "error": None,
     }
+
+
+@router.post("/mindmap/generate")
+def generateMindmap(
+    mindmapGenerateRequest: MindmapGenerateRequest,
+    svc: ContentServiceDep,
+):
+    print("Received mindmap generation request:", mindmapGenerateRequest)
+    result = svc.generate_mindmap(mindmapGenerateRequest)
+    return result
+
+
+@router.post("/mindmap/generate/mock")
+def generateMindmap_Mock(
+    svc: ContentServiceDep,
+    mindmapGenerateRequest: MindmapGenerateRequest,
+):
+    print("Received mock mindmap generation request:", mindmapGenerateRequest)
+    result = svc.generate_mindmap_mock(mindmapGenerateRequest)
+    return result

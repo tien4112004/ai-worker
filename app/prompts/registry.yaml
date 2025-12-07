@@ -14,3 +14,9 @@ prompts:
   image.user:
     path: "image/usr_prompt.st"
     format: "st"
+  mindmap.system:
+    path: "mindmap/sys_prompt.st"
+    format: "st"
+  mindmap.user:
+    path: "mindmap/usr_prompt.st"
+    format: "st"

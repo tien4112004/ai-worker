@@ -10,6 +10,7 @@ from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.repositories.llm_result_repository import llm_result_repository
 from app.schemas.image_content import ImageGenerateRequest
+from app.schemas.mindmap_content import MindmapGenerateRequest
 from app.schemas.slide_content import (
     OutlineGenerateRequest,
     PresentationGenerateRequest,
@@ -278,3 +279,122 @@ class ContentService:
             "count": request.number_of_images,
             "error": None,
         }
+
+    def generate_mindmap(self, request: MindmapGenerateRequest):
+        sys_msg = self._system(
+            "mindmap.system",
+            request.to_dict(),
+        )
+
+        usr_msg = self._system(
+            "mindmap.user",
+            request.to_dict(),
+        )
+
+        result = self.llm_executor.batch(
+            provider=request.provider,
+            model=request.model,
+            messages=[
+                SystemMessage(content=sys_msg),
+                HumanMessage(content=usr_msg),
+            ],
+        )
+
+        return result
+
+    def generate_mindmap_mock(self, request: MindmapGenerateRequest):
+        """Generate mock mindmap data for testing purposes."""
+        sleep(random.uniform(1.4, 1.5))  # Simulate some processing delay
+
+        mock_mindmap = """
+        ```json
+    {
+        "content": "Thế giới xung quanh em",
+        "children": [
+            {
+            "content": "Động vật 🐾",
+            "children": [
+                {
+                "content": "Động vật có vú",
+                "children": [
+                    { "content": "Chó - bạn thân của con người" },
+                    { "content": "Mèo - loài vật tinh nghịch" },
+                    { "content": "Voi - loài vật to lớn" }
+                ]
+                },
+                {
+                "content": "Chim 🐦",
+                "children": [
+                    { "content": "Chim sẻ - hót líu lo mỗi sáng" },
+                    { "content": "Chim cánh cụt - sống ở xứ lạnh" },
+                    { "content": "Đại bàng - chúa tể bầu trời" }
+                ]
+                },
+                {
+                "content": "Côn trùng 🐞",
+                "children": [
+                    { "content": "Ong - chăm chỉ làm mật" },
+                    { "content": "Bướm - xinh đẹp với đôi cánh" }
+                ]
+                }
+            ]
+            },
+            {
+            "content": "Thực vật 🌱",
+            "children": [
+                {
+                "content": "Cây xanh",
+                "children": [
+                    { "content": "Cây ăn quả - cho ta trái ngon" },
+                    { "content": "Cây bóng mát - che rợp đường đi" }
+                ]
+                },
+                {
+                "content": "Hoa 🌸",
+                "children": [
+                    { "content": "Hoa hồng - biểu tượng của tình yêu" },
+                    { "content": "Hoa hướng dương - luôn hướng về mặt trời" }
+                ]
+                },
+                {
+                "content": "Rau củ 🥕",
+                "children": [
+                    { "content": "Cà rốt - tốt cho mắt" },
+                    { "content": "Bắp cải - nhiều vitamin" }
+                ]
+                }
+            ]
+            },
+            {
+            "content": "Thiên nhiên 🏞️",
+            "children": [
+                {
+                "content": "Núi non hùng vĩ",
+                "children": [
+                    { "content": "Đỉnh núi cao vút" },
+                    { "content": "Thung lũng xanh mướt" }
+                ]
+                },
+                {
+                "content": "Biển cả bao la 🌊",
+                "children": [
+                    { "content": "Sóng vỗ rì rào" },
+                    { "content": "Sinh vật biển đa dạng" }
+                ]
+                },
+                {
+                "content": "Thời tiết ☀️🌧️",
+                "children": [
+                    { "content": "Trời nắng - ấm áp" },
+                    { "content": "Trời mưa - mát mẻ" },
+                    { "content": "Trời gió - thổi mạnh" }
+                ]
+                }
+            ]
+            }
+        ]
+    }
+        ```
+        """
+
+        return mock_mindmap
