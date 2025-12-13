@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from typing import Any, Dict
 
@@ -9,7 +10,22 @@ logger = settings.logger
 
 
 class ImagenAdapter:
+    """
+    DEPRECATED: This adapter has been replaced by NanoBananaAdapter.
+
+    Imagen was using Vertex AI which requires billing to be enabled on the Google Cloud project.
+    The new NanoBananaAdapter (Gemini 2.5 Flash Image) uses the Gemini API with simpler authentication.
+
+    This class is kept for backwards compatibility but should not be used in new code.
+    """
+
     def __init__(self, model: str):
+        warnings.warn(
+            "ImagenAdapter is deprecated. Use NanoBananaAdapter instead. "
+            "Provider 'google' now uses Nano Banana (Gemini 2.5 Flash Image).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # REQUIRES: VERTEX_PROJECT_ID and VERTEX_LOCATION set in env
         self._llm = ImageGenerationModel.from_pretrained(model_name=model)
 

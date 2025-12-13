@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
-from app.llms.adaper.image_models.imagen import ImagenAdapter
+from app.core.config import settings
+from app.llms.adaper.image_models.nano_banana import NanoBananaAdapter
 from app.llms.adaper.text_models.gemini import GeminiAdapter
 from app.llms.adaper.text_models.open_router import OpenRouterAdapter
 from app.llms.adaper.text_models.openai import OpenAIAdapter
@@ -13,7 +14,10 @@ class LLMExecutor:
             "google": GeminiAdapter,
             "openrouter": OpenRouterAdapter,
         }
-        self.image_adapters = {"google": ImagenAdapter}
+        self.image_adapters = {
+            "google": NanoBananaAdapter,  # Migrated to Nano Banana (Gemini 2.5 Flash Image)
+            "nano_banana": NanoBananaAdapter,  # Alias for backwards compatibility
+        }
 
     def _adapter(self, provider: str):
         if provider in self.adapters:
@@ -46,5 +50,6 @@ class LLMExecutor:
         if adapter_class is None:
             raise ValueError(f"Image adapter for {provider} is not available")
 
-        adapter = adapter_class(model=model)
+        # All image generation now uses API key authentication (Nano Banana)
+        adapter = adapter_class(model=model, api_key=settings.google_api_key)
         return adapter.generate(message=message, **params)
