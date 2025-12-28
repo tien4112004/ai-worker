@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     )  # Alternative name for Gemini API key
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+    banana_api_key: str = os.getenv("BANANA_API_KEY", "")
 
     # VertexAI Configuration
     service_account_json: str = os.getenv(
