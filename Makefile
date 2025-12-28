@@ -136,13 +136,13 @@ docker-compose-logs:
 
 # Rebuild and restart docker-compose
 docker-compose-rebuild:
-	docker-compose down
-	docker-compose build --no-cache
-	docker-compose up -d
+	docker compose down
+	docker compose build --no-cache
+	docker compose up -d
 
 # Clean Docker resources
 docker-clean:
-	docker-compose down -v
+	docker compose down -v
 	docker rmi ai-worker:latest || true
 	docker system prune -f
 

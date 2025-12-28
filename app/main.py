@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.services.content_service import ContentService
+from app.services.exam_service import ExamService
 
 
 @asynccontextmanager
@@ -19,9 +20,13 @@ async def lifespan(app: FastAPI):
     content_service = ContentService(
         llm_executor=llm_executor, prompt_store=prompt_store
     )
+    exam_service = ExamService(
+        llm_executor=llm_executor, prompt_store=prompt_store
+    )
 
     app.state.settings = settings
     app.state.content_service = content_service
+    app.state.exam_service = exam_service
 
     def init_vertexai():
         """Initialize Vertex AI settings."""
