@@ -23,6 +23,12 @@ services:
       - ALLOWED_HEADERS=*
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=info
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
     env_file:
       - .env
     volumes:
@@ -37,8 +43,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - ai-worker-network
     deploy:
       resources:
         limits:
