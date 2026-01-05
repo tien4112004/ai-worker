@@ -304,6 +304,8 @@ python-dotenv==1.1.0
     #   -r requirements.in
     #   pydantic-settings
     #   uvicorn
+psycopg2-binary==2.9.10
+    # via -r requirements.in
 pyyaml==6.0.2
     # via
     #   -r requirements.in
