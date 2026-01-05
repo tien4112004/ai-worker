@@ -43,6 +43,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY app/ ./app/
+COPY scripts/ ./scripts/
 
 # Copy environment files (optional, better to use env vars)
 # COPY .env ./app/.env
