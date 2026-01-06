@@ -38,7 +38,7 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - datn-be_default
+      - default
     deploy:
       resources:
         limits:
@@ -65,9 +65,9 @@ services:
   #   networks:
   #     - ai-worker-network
 
-volumes:
-  redis_data:
-    driver: local
+# volumes:
+#   redis_data:
+#     driver: local
 
 networks:
   default:

@@ -1,6 +1,8 @@
 """Service for exam and question generation."""
 
 import json
+import uuid
+from datetime import datetime
 from typing import Any, AsyncGenerator, Dict, List
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -8,12 +10,15 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.schemas.exam_content import (
+    ExamMatrix,
     GenerateMatrixRequest,
     GenerateQuestionsRequest,
     GenerationProgress,
+    MatrixContent,
     MatrixItem,
     QuestionGenerationStatus,
     QuestionWithContext,
+    Topic,
 )
 
 
@@ -28,8 +33,50 @@ class ExamService:
         """Render a system prompt from the prompt store."""
         return self.prompt_store.render(key, vars)
 
+    def _convert_matrix_items_to_exam_matrix(
+        self, items: List[MatrixItem], request: GenerateMatrixRequest
+    ) -> ExamMatrix:
+        """Convert legacy MatrixItem list to new ExamMatrix structure."""
+        # Extract unique topics
+        unique_topics = {}
+        for item in items:
+            if item.topic not in unique_topics:
+                unique_topics[item.topic] = Topic(
+                    id=str(uuid.uuid4()),
+                    name=item.topic,
+                    description=None
+                )
+        
+        # Group by difficulty to create contents
+        difficulty_groups = {"easy": 0, "medium": 0, "hard": 0}
+        for item in items:
+            difficulty_groups[item.difficulty] += item.count
+        
+        contents = [
+            MatrixContent(
+                difficulty=difficulty,
+                number_of_questions=count,
+                selected_questions=None
+            )
+            for difficulty, count in difficulty_groups.items()
+            if count > 0
+        ]
+        
+        return ExamMatrix(
+            id=str(uuid.uuid4()),
+            name=f"{request.topic} - Grade {request.grade_level}",
+            description=request.content,
+            subject_code=request.topic,  # Using topic as subject code for now
+            target_total_points=request.total_points,
+            topics=list(unique_topics.values()),
+            contents=contents,
+            created_at=datetime.utcnow().isoformat(),
+            updated_at=datetime.utcnow().isoformat(),
+            created_by=None
+        )
+
     # Matrix Generation
-    def generate_matrix(self, request: GenerateMatrixRequest) -> List[MatrixItem]:
+    def generate_matrix(self, request: GenerateMatrixRequest) -> ExamMatrix:
         """
         Generate an exam matrix using LLM.
 
@@ -37,7 +84,7 @@ class ExamService:
             request: Request containing exam requirements
 
         Returns:
-            List of MatrixItem objects representing the exam structure
+            ExamMatrix object representing the exam structure
         """
         sys_msg = self._system("exam.matrix.system", None)
         usr_msg = self._system("exam.matrix.user", request.to_dict())
@@ -65,7 +112,8 @@ class ExamService:
                 )
 
             matrix_data = json.loads(result_text)
-            return [MatrixItem(**item) for item in matrix_data]
+            matrix_items = [MatrixItem(**item) for item in matrix_data]
+            return self._convert_matrix_items_to_exam_matrix(matrix_items, request)
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse matrix response: {e}\nResponse: {result}")
 
@@ -272,9 +320,9 @@ class ExamService:
     # Mock methods for testing
     def generate_matrix_mock(
         self, request: GenerateMatrixRequest
-    ) -> List[MatrixItem]:
+    ) -> ExamMatrix:
         """Generate a mock exam matrix for testing."""
-        return [
+        matrix_items = [
             MatrixItem(
                 topic="Basic Addition",
                 question_type="multiple_choice",
@@ -292,6 +340,7 @@ class ExamService:
                 requires_context=False,
             ),
         ]
+        return self._convert_matrix_items_to_exam_matrix(matrix_items, request)
 
     async def generate_matrix_stream_mock(
         self, request: GenerateMatrixRequest

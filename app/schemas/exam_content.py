@@ -1,12 +1,56 @@
 """Schemas for exam and question generation."""
 
 from typing import Any, Dict, List, Literal, Optional, Union
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
 
+class Topic(BaseModel):
+    """Represents a topic in the exam matrix."""
+    
+    id: str = Field(..., description="Unique identifier for the topic")
+    name: str = Field(..., description="Name of the topic")
+    description: Optional[str] = Field(None, description="Optional description of the topic")
+
+
+class MatrixContent(BaseModel):
+    """Represents a content cell in the exam matrix."""
+    
+    difficulty: Literal["easy", "medium", "hard"] = Field(
+        ..., description="Difficulty level"
+    )
+    numberOfQuestions: int = Field(..., ge=1, description="Number of questions for this difficulty", alias="number_of_questions")
+    selectedQuestions: Optional[List[str]] = Field(
+        default=None, 
+        description="Question IDs currently selected for this cell (Runtime tracking)",
+        alias="selected_questions"
+    )
+    
+    class Config:
+        populate_by_name = True
+
+
+class ExamMatrix(BaseModel):
+    """Represents the complete exam matrix structure."""
+    
+    id: str = Field(..., description="Unique identifier for this matrix")
+    name: str = Field(..., description="Matrix name")
+    description: Optional[str] = Field(None, description="Optional description")
+    subjectCode: str = Field(..., description="Subject code of the exam", alias="subject_code")
+    targetTotalPoints: int = Field(..., ge=1, description="Target total points for the exam", alias="target_total_points")
+    topics: List[Topic] = Field(..., description="Topics included in this matrix")
+    contents: List[MatrixContent] = Field(..., description="Content cells for different difficulties")
+    createdAt: Optional[str] = Field(None, description="ISO timestamp of creation", alias="created_at")
+    updatedAt: Optional[str] = Field(None, description="ISO timestamp of last update", alias="updated_at")
+    createdBy: Optional[str] = Field(None, description="User ID of creator", alias="created_by")
+    
+    class Config:
+        populate_by_name = True
+
+
 class MatrixItem(BaseModel):
-    """Represents a single item in the exam matrix."""
+    """Represents a single item in the exam matrix (Legacy format)."""
 
     topic: str = Field(..., description="Topic or subtopic for questions")
     question_type: Literal[
