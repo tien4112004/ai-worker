@@ -8,6 +8,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.depends import ExamServiceDep
 from app.schemas.exam_content import (
+    ExamMatrix,
     GenerateMatrixRequest,
     GenerateQuestionsRequest,
     MatrixItem,
@@ -18,7 +19,7 @@ router = APIRouter(tags=["exams"])
 
 
 # Matrix Generation Endpoints
-@router.post("/exams/generate-matrix", response_model=List[MatrixItem])
+@router.post("/exams/generate-matrix", response_model=ExamMatrix)
 def generate_exam_matrix(
     request_body: GenerateMatrixRequest, svc: ExamServiceDep
 ):
@@ -128,7 +129,7 @@ async def generate_questions_stream(
 
 
 # Mock Endpoints for Testing
-@router.post("/exams/generate-matrix/mock", response_model=List[MatrixItem])
+@router.post("/exams/generate-matrix/mock", response_model=ExamMatrix)
 def generate_exam_matrix_mock(
     request_body: GenerateMatrixRequest, svc: ExamServiceDep
 ):
