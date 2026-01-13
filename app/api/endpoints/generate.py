@@ -1,7 +1,10 @@
 import base64
 import json
+import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from app.depends import ContentServiceDep
@@ -14,7 +17,18 @@ from app.schemas.slide_content import (
     OutlineGenerateRequest,
     PresentationGenerateRequest,
 )
+from app.schemas.token_usage import TokenUsage
 from app.utils.server_sent_event import sse_json_by_json, sse_word_by_word
+
+
+logger = logging.getLogger(__name__)
+
+
+class GenerateResponse(BaseModel):
+    """Generic response wrapper with token usage."""
+    data: Any
+    token_usage: TokenUsage | None = None
+
 
 router = APIRouter(tags=["generate"])
 
@@ -24,7 +38,9 @@ def generateOutline(
     outlineGenerateRequest: OutlineGenerateRequest, svc: ContentServiceDep
 ):
     result = svc.make_outline(outlineGenerateRequest)
-    return result
+    token_usage = svc.last_token_usage
+    logger.info(f"[OUTLINE/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    return GenerateResponse(data=result, token_usage=token_usage)
 
 
 @router.post("/outline/generate/stream")
@@ -33,9 +49,10 @@ def generateOutline_Stream(
     outlineGenerateRequest: OutlineGenerateRequest,
     svc: ContentServiceDep,
 ):
-    result = svc.make_outline_stream(outlineGenerateRequest)
+    chunks, token_usage = svc.make_outline_stream(outlineGenerateRequest)
+    logger.info(f"[OUTLINE/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
     print("Starting outline stream response")
-    return EventSourceResponse(sse_word_by_word(request, result), ping=None)
+    return EventSourceResponse(sse_word_by_word(request, chunks, token_usage), ping=None)
 
 
 @router.post("/presentations/generate")
@@ -44,7 +61,9 @@ def generatePresentation(
     svc: ContentServiceDep,
 ):
     result = svc.make_presentation(presentationGenerateRequest)
-    return result
+    token_usage = svc.last_token_usage
+    logger.info(f"[PRESENTATIONS/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    return GenerateResponse(data=result, token_usage=token_usage)
 
 
 @router.post("/presentations/generate/stream")
@@ -53,21 +72,23 @@ def generatePresentation_Stream(
     presentationGenerateRequest: PresentationGenerateRequest,
     svc: ContentServiceDep,
 ):
-    print("Received mock stream request:", presentationGenerateRequest)
+    print("Received presentation stream request:", presentationGenerateRequest)
 
-    result = svc.make_presentation_stream(presentationGenerateRequest)
+    chunks, token_usage = svc.make_presentation_stream(presentationGenerateRequest)
+    logger.info(f"[PRESENTATIONS/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
 
-    return EventSourceResponse(sse_json_by_json(request, result), ping=None)
+    return EventSourceResponse(sse_json_by_json(request, chunks, token_usage), ping=None)
 
 
 # Mock endpoints for testing without LLM calls
 @router.post("/outline/generate/mock")
 def generateOutline_Mock(
     svc: ContentServiceDep, outlineGenerateRequest: OutlineGenerateRequest
-) -> str:
-    print("Received mock stream request:", outlineGenerateRequest)
-    result = svc.make_outline_mock(outlineGenerateRequest)
-    return result
+):
+    print("Received mock outline request:", outlineGenerateRequest)
+    result, token_usage = svc.make_outline_mock(outlineGenerateRequest)
+    logger.info(f"[OUTLINE/GENERATE/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    return GenerateResponse(data=result, token_usage=token_usage)
 
 
 @router.post("/outline/generate/stream/mock")
@@ -76,17 +97,19 @@ async def generateOutline_Mock_Stream(
     outlineGenerateRequest: OutlineGenerateRequest,
     svc: ContentServiceDep,
 ):
-    print("Received mock stream request:", outlineGenerateRequest)
+    print("Received mock outline stream request:", outlineGenerateRequest)
+    chunks, token_usage = svc.make_outline_stream_mock()
+    logger.info(f"[OUTLINE/GENERATE/STREAM/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
 
     async def event_stream():
-        for chunk in svc.make_outline_stream_mock():
+        for chunk in chunks:
             if await request.is_disconnected():
                 break
             yield {
                 "data": base64.b64encode(chunk.encode("utf-8")).decode("ascii")
             }
 
-    return EventSourceResponse(event_stream(), media_type="text/event-stream")
+    return EventSourceResponse(sse_word_by_word(request, chunks, token_usage), media_type="text/event-stream")
 
 
 @router.post("/presentations/generate/mock")
@@ -94,9 +117,10 @@ def generatePresentation_Mock(
     svc: ContentServiceDep,
     presentationGenerateRequest: PresentationGenerateRequest,
 ):
-    print("Received mock stream request:", presentationGenerateRequest)
-    result = svc.make_presentation_mock(presentationGenerateRequest)
-    return result
+    print("Received mock presentation request:", presentationGenerateRequest)
+    result, token_usage = svc.make_presentation_mock(presentationGenerateRequest)
+    logger.info(f"[PRESENTATIONS/GENERATE/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    return GenerateResponse(data=result, token_usage=token_usage)
 
 
 @router.post("/presentations/generate/stream/mock")
@@ -105,15 +129,15 @@ async def generatePresentation_Mock_Stream(
     presentationGenerateRequest: PresentationGenerateRequest,
     svc: ContentServiceDep,
 ):
-    print("Received mock stream request:", presentationGenerateRequest)
+    print("Received mock presentation stream request:", presentationGenerateRequest)
 
-    async def event_stream():
-        async for obj in svc.make_presentation_stream_mock():
-            if await request.is_disconnected():
-                break
-            yield f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+    slides, token_usage = await svc.make_presentation_stream_mock()
+    logger.info(f"[PRESENTATIONS/GENERATE/STREAM/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    
+    # Convert slide dicts to JSON strings for sse_json_by_json
+    slide_strings = [json.dumps(slide, ensure_ascii=False) for slide in slides]
 
-    return EventSourceResponse(event_stream(), media_type="text/event-stream")
+    return EventSourceResponse(sse_json_by_json(request, slide_strings, token_usage), media_type="text/event-stream")
 
 
 @router.post("/image/generate", response_model=ImageGenerateResponse)
@@ -129,10 +153,12 @@ def generate_image(
             detail=result["error"],
         )
 
+    logger.info(f"[IMAGE/GENERATE] Images generated: count={result['count']}, model={imageGenerateRequest.model} (token_usage not available for image generation)")
     return {
         "images": result["images"],
         "count": result["count"],
         "error": None,
+        "token_usage": None,
     }
 
 
@@ -149,10 +175,12 @@ def generate_image_mock(
             detail=result["error"],
         )
 
+    logger.info(f"[IMAGE/GENERATE/MOCK] Images generated: count={result['count']}, model={imageGenerateRequest.model} (token_usage not available for image generation)")
     return {
         "images": result["images"],
         "count": result["count"],
         "error": None,
+        "token_usage": None,
     }
 
 
@@ -163,7 +191,9 @@ def generateMindmap(
 ):
     print("Received mindmap generation request:", mindmapGenerateRequest)
     result = svc.generate_mindmap(mindmapGenerateRequest)
-    return result
+    token_usage = svc.last_token_usage
+    logger.info(f"[MINDMAP/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    return GenerateResponse(data=result, token_usage=token_usage)
 
 
 @router.post("/mindmap/generate/mock")
@@ -172,5 +202,5 @@ def generateMindmap_Mock(
     mindmapGenerateRequest: MindmapGenerateRequest,
 ):
     print("Received mock mindmap generation request:", mindmapGenerateRequest)
-    result = svc.generate_mindmap_mock(mindmapGenerateRequest)
-    return result
+    result, token_usage = svc.generate_mindmap_mock(mindmapGenerateRequest)
+    return GenerateResponse(data=result, token_usage=token_usage)
