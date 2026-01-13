@@ -3,6 +3,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from typing_extensions import Literal
 
+from app.schemas.token_usage import TokenUsage
+
 
 class ImageGenerateRequest(BaseModel):
     prompt: str
@@ -51,3 +53,7 @@ class ImageGenerateResponse(BaseModel):
         default=None, description="Error message if image generation failed"
     )
     count: int = Field(default=1, description="Number of Images")
+    token_usage: Optional[TokenUsage] = Field(
+        default=None,
+        description="Token usage information (None for image generation as Google API does not expose token counts)",
+    )

@@ -1,11 +1,13 @@
 import base64
 import json
 import re
-from typing import Any, Generator
+from typing import Any, Generator, List, Optional, Tuple
 
 
 # VIBE CODE
-async def sse_word_by_word(request, generator: Generator[Any, Any, None]):
+async def sse_word_by_word(
+    request, chunks: List[str], token_usage: Optional[Any] = None
+):
     print("Starting SSE word by word")
     if await request.is_disconnected():
         print("Client disconnected")
@@ -14,7 +16,8 @@ async def sse_word_by_word(request, generator: Generator[Any, Any, None]):
     buffer = ""
 
     try:
-        for chunk in generator:
+        # Send content chunks
+        for chunk in chunks:
             if await request.is_disconnected():
                 print("Client disconnected during streaming")
                 return
@@ -44,6 +47,22 @@ async def sse_word_by_word(request, generator: Generator[Any, Any, None]):
         if buffer:
             encoded = base64.b64encode(buffer.encode("utf-8")).decode("ascii")
             yield {"data": encoded}
+        
+        # Send token usage as final event
+        if token_usage:
+            yield {
+                "data": base64.b64encode(
+                    json.dumps({
+                        "token_usage": {
+                            "input_tokens": token_usage.input_tokens,
+                            "output_tokens": token_usage.output_tokens,
+                            "total_tokens": token_usage.total_tokens,
+                            "model": token_usage.model,
+                            "provider": token_usage.provider,
+                        }
+                    }).encode("utf-8")
+                ).decode("ascii")
+            }
 
     except Exception as e:
         print(f"Error in word-by-word streaming: {e}")
@@ -54,8 +73,10 @@ async def sse_word_by_word(request, generator: Generator[Any, Any, None]):
 
 
 # VIBE CODE
-async def sse_json_by_json(request, generator: Generator[Any, Any, None]):
-    """Stream JSON objects one at a time in SSE format."""
+async def sse_json_by_json(
+    request, chunks: List[str], token_usage: Optional[Any] = None
+):
+    """Stream JSON objects one at a time in SSE format, then send token usage."""
     print("Starting SSE JSON by JSON streaming")
 
     if await request.is_disconnected():
@@ -65,7 +86,8 @@ async def sse_json_by_json(request, generator: Generator[Any, Any, None]):
     buffer = ""
 
     try:
-        for chunk in generator:
+        # Process content chunks
+        for chunk in chunks:
             if await request.is_disconnected():
                 print("Client disconnected during streaming")
                 return
@@ -127,6 +149,10 @@ async def sse_json_by_json(request, generator: Generator[Any, Any, None]):
                     else:
                         # Incomplete JSON object, wait for more data
                         break
+        
+        # Send token usage as final event
+        if token_usage:
+            yield f"data: {json.dumps({'token_usage': {'input_tokens': token_usage.input_tokens, 'output_tokens': token_usage.output_tokens, 'total_tokens': token_usage.total_tokens, 'model': token_usage.model, 'provider': token_usage.provider}}, ensure_ascii=False)}\n\n"
 
     except Exception as e:
         print(f"Error in SSE streaming: {e}")

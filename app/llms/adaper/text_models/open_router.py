@@ -1,9 +1,11 @@
 import os
-from typing import List
+from typing import List, Tuple
 
 from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOpenAI
 from langchain_core.messages import BaseMessage
+
+from app.schemas.token_usage import TokenUsage
 
 
 class OpenRouterAdapter:
@@ -27,18 +29,55 @@ class OpenRouterAdapter:
             base_url=params.get("openrouter_api_base"),
         )
 
-    def run(self, model: str, messages: List[BaseMessage], **params) -> str:
-        resp = self.client.invoke(
-            input=messages, model=model, **params
-        ).content
+    def run(
+        self, model: str, messages: List[BaseMessage], **params
+    ) -> Tuple[str, TokenUsage]:
+        resp = self.client.invoke(input=messages, model=model, **params)
+        content = resp.content
 
-        if isinstance(resp, list):
-            return " ".join(str(item) for item in resp)
+        if isinstance(content, list):
+            content = " ".join(str(item) for item in content)
 
-        return resp
+        # Extract token usage
+        usage = TokenUsage()
+        if hasattr(resp, "usage_metadata") and resp.usage_metadata:
+            usage = TokenUsage(
+                input_tokens=resp.usage_metadata.get("input_tokens", 0),
+                output_tokens=resp.usage_metadata.get("output_tokens", 0),
+                total_tokens=resp.usage_metadata.get("input_tokens", 0)
+                + resp.usage_metadata.get("output_tokens", 0),
+                model=model,
+                provider="openrouter",
+            )
 
-    def stream(self, model: str, messages: List[BaseMessage], **params):
-        resp = self.client.stream(input=messages, model=model, **params)
+        return content, usage
 
-        for chunk in resp:
-            yield chunk.content
+    def stream(self, model: str, messages: List[BaseMessage], **params) -> Tuple[List[str], TokenUsage]:
+        """Stream response and collect token usage.
+        
+        Returns a tuple of (chunks, token_usage) where chunks is a list of content chunks.
+        """
+        chunks = []
+        total_input_tokens = 0
+        total_output_tokens = 0
+
+        resp_stream = self.client.stream(input=messages, model=model, **params)
+        
+        for chunk in resp_stream:
+            if chunk.content:
+                chunks.append(chunk.content)
+            # Sum token usage from each chunk
+            if hasattr(chunk, "usage_metadata") and chunk.usage_metadata:
+                total_input_tokens += chunk.usage_metadata.get("input_tokens", 0)
+                total_output_tokens += chunk.usage_metadata.get("output_tokens", 0)
+
+        total = total_input_tokens + total_output_tokens
+        usage = TokenUsage(
+            input_tokens=total_input_tokens,
+            output_tokens=total_output_tokens,
+            total_tokens=total,
+            model=model,
+            provider="openrouter",
+        )
+
+        return chunks, usage

@@ -1,10 +1,11 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 
 from app.core.config import settings
 from app.llms.adaper.image_models.nano_banana import NanoBananaAdapter
 from app.llms.adaper.text_models.gemini import GeminiAdapter
 from app.llms.adaper.text_models.open_router import OpenRouterAdapter
 from app.llms.adaper.text_models.openai import OpenAIAdapter
+from app.schemas.token_usage import TokenUsage
 
 
 class LLMExecutor:
@@ -31,16 +32,17 @@ class LLMExecutor:
 
         raise ValueError(f"Unknown image provider: {provider}")
 
-    def batch(self, provider: str, model: str, messages, **params) -> str:
+    def batch(
+        self, provider: str, model: str, messages, **params
+    ) -> Tuple[str, TokenUsage]:
         adapter_class = self._adapter(provider)
         adapter = adapter_class(model_name=model)
         return adapter.run(model=model, messages=messages, **params)
 
-    def stream(self, provider: str, model: str, messages, **params):
+    def stream(self, provider: str, model: str, messages, **params) -> Tuple[List[str], TokenUsage]:
         adapter_class = self._adapter(provider)
         adapter = adapter_class(model_name=model)
-        for chunk in adapter.stream(model=model, messages=messages, **params):
-            yield chunk
+        return adapter.stream(model=model, messages=messages, **params)
 
     def generate_image(
         self, provider: str, model: str, message: str, **params
