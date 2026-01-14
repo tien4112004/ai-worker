@@ -1,6 +1,41 @@
-version: "3.8"
-
 services:
+  local-ai:
+    container_name: local-ai
+    image: localai/localai:latest
+    ports:
+      - "8083:8080"
+    environment:
+      THREADS: "${LOCALAI_THREADS:-8}"
+      CONTEXT_SIZE: "${LOCALAI_CONTEXT_SIZE:-2048}"
+      WATCHDOG_ENABLED: true
+      WATCHDOG_IDLE_ENABLED: true
+      WATCHDOG_BUSY_ENABLED: false
+      WATCHDOG_IDLE_TIMEOUT: "15m"
+      WATCHDOG_BUSY_TIMEOUT: "5m"
+      SINGLE_BACKEND: false
+      PARALLEL_BACKEND_REQUESTS: true
+      CORS: true
+      CORS_ALLOW_ORIGINS: "*"
+      LOG_LEVEL: "debug"
+      PRELOAD_MODELS: ""
+    volumes:
+      - localai_config:/home/localai/.local-ai/configuration
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 6G
+        reservations:
+          cpus: "2"
+          memory: 3G
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   ai-worker:
     container_name: ai-worker
     build:
@@ -66,6 +101,8 @@ services:
   #     - ai-worker-network
 
 volumes:
+  localai_config:
+  localai_models:
   redis_data:
     driver: local
 

@@ -3,6 +3,7 @@ from typing import Any, Dict
 from app.core.config import settings
 from app.llms.adaper.image_models.nano_banana import NanoBananaAdapter
 from app.llms.adaper.text_models.gemini import GeminiAdapter
+from app.llms.adaper.text_models.localai import LocalAIAdapter
 from app.llms.adaper.text_models.open_router import OpenRouterAdapter
 from app.llms.adaper.text_models.openai import OpenAIAdapter
 
@@ -13,6 +14,7 @@ class LLMExecutor:
             "openai": OpenAIAdapter,
             "google": GeminiAdapter,
             "openrouter": OpenRouterAdapter,
+            "localai": LocalAIAdapter,
         }
         self.image_adapters = {
             "google": NanoBananaAdapter,  # Migrated to Nano Banana (Gemini 2.5 Flash Image)
