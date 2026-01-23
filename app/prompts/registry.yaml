@@ -32,3 +32,9 @@ prompts:
   exam.questions.user:
     path: "exam/questions_usr_prompt.st"
     format: "st"
+  exam.matrix.v2.system:
+    path: "exam/matrix_v2_sys_prompt.st"
+    format: "st"
+  exam.matrix.v2.user:
+    path: "exam/matrix_v2_usr_prompt.st"
+    format: "st"

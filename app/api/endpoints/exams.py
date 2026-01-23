@@ -9,7 +9,9 @@ from sse_starlette.sse import EventSourceResponse
 from app.depends import ExamServiceDep
 from app.schemas.exam_content import (
     ExamMatrix,
+    ExamMatrixV2,
     GenerateMatrixRequest,
+    GenerateMatrixV2Request,
     GenerateQuestionsRequest,
     MatrixItem,
     QuestionWithContext,
@@ -41,6 +43,37 @@ def generate_exam_matrix(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate matrix: {str(e)}",
+        )
+
+
+# V2 Matrix Generation - 3D Format
+@router.post("/exams/generate-matrix/v2", response_model=ExamMatrixV2)
+def generate_exam_matrix_v2(
+    request_body: GenerateMatrixV2Request, svc: ExamServiceDep
+):
+    """
+    Generate a 3D exam matrix based on topics, difficulties, and question types.
+
+    This endpoint creates a structured 3D blueprint for an exam, with dimensions:
+    - Topics (first dimension)
+    - Difficulties: easy, medium, hard (second dimension)
+    - Question types: multiple_choice, fill_in_blank, etc. (third dimension)
+
+    Each cell contains {count, points} representing the number of questions
+    and total points for that combination.
+    """
+    try:
+        result = svc.generate_matrix_v2(request_body)
+        return result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate V2 matrix: {str(e)}",
         )
 
 
@@ -179,3 +212,14 @@ async def generate_questions_stream_mock(
             yield {"data": json.dumps(data, ensure_ascii=False)}
 
     return EventSourceResponse(event_stream(), media_type="text/event-stream")
+
+
+# V2 Mock Endpoint
+@router.post("/exams/generate-matrix/v2/mock", response_model=ExamMatrixV2)
+def generate_exam_matrix_v2_mock(
+    request_body: GenerateMatrixV2Request, svc: ExamServiceDep
+):
+    """Generate a mock 3D exam matrix for testing without LLM calls."""
+    result = svc.generate_matrix_v2_mock(request_body)
+    return result
+

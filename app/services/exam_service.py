@@ -11,11 +11,17 @@ from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.schemas.exam_content import (
     ExamMatrix,
+    ExamMatrixV2,
     GenerateMatrixRequest,
+    GenerateMatrixV2Request,
     GenerateQuestionsRequest,
     GenerationProgress,
+    MatrixCell,
     MatrixContent,
+    MatrixDimensions,
     MatrixItem,
+    MatrixMetadata,
+    DimensionTopic,
     QuestionGenerationStatus,
     QuestionWithContext,
     Topic,
@@ -116,6 +122,103 @@ class ExamService:
             return self._convert_matrix_items_to_exam_matrix(matrix_items, request)
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse matrix response: {e}\nResponse: {result}")
+
+    # V2 Matrix Generation - 3D Format
+    def generate_matrix_v2(self, request: GenerateMatrixV2Request) -> ExamMatrixV2:
+        """
+        Generate a 3D exam matrix using LLM.
+
+        The matrix is indexed as: matrix[topic_index][difficulty_index][question_type_index]
+        Each cell contains {count, points} for that combination.
+
+        Args:
+            request: Request containing exam requirements with topics list
+
+        Returns:
+            ExamMatrixV2 object representing the 3D exam structure
+        """
+        # Prepare prompt variables
+        prompt_vars = request.to_dict()
+        prompt_vars["difficulties"] = request.difficulties or ["easy", "medium", "hard"]
+        prompt_vars["question_types"] = request.questionTypes or [
+            "multiple_choice", "fill_in_blank", "true_false", "matching"
+        ]
+        
+        sys_msg = self._system("exam.matrix.v2.system", prompt_vars)
+        usr_msg = self._system("exam.matrix.v2.user", prompt_vars)
+
+        result = self.llm_executor.batch(
+            provider=request.provider,
+            model=request.model,
+            messages=[
+                SystemMessage(content=sys_msg),
+                HumanMessage(content=usr_msg),
+            ],
+        )
+
+        # Parse the JSON response
+        try:
+            result_text = self._extract_json(result)
+            matrix_data = json.loads(result_text)
+            
+            # Parse into ExamMatrixV2 structure
+            metadata = MatrixMetadata(
+                id=matrix_data.get("metadata", {}).get("id", str(uuid.uuid4())),
+                name=matrix_data.get("metadata", {}).get("name", request.name),
+                created_at=matrix_data.get("metadata", {}).get("createdAt", datetime.utcnow().isoformat())
+            )
+            
+            # Parse dimensions
+            dims_data = matrix_data.get("dimensions", {})
+            topics = [
+                DimensionTopic(id=t.get("id", str(uuid.uuid4())), name=t.get("name", "Unknown"))
+                for t in dims_data.get("topics", [])
+            ]
+            
+            dimensions = MatrixDimensions(
+                topics=topics,
+                difficulties=dims_data.get("difficulties", ["easy", "medium", "hard"]),
+                question_types=dims_data.get("questionTypes", ["multiple_choice", "fill_in_blank", "true_false", "matching"])
+            )
+            
+            # Parse 3D matrix - expect [count, points] arrays
+            raw_matrix = matrix_data.get("matrix", [])
+            parsed_matrix = []
+            for topic_row in raw_matrix:
+                diff_rows = []
+                for diff_row in topic_row:
+                    qtype_cells = []
+                    for cell in diff_row:
+                        # Handle both array format [count, points] and object format {count, points}
+                        if isinstance(cell, list):
+                            qtype_cells.append([int(cell[0]), float(cell[1])])
+                        else:
+                            qtype_cells.append([cell.get("count", 0), cell.get("points", 0)])
+                    diff_rows.append(qtype_cells)
+                parsed_matrix.append(diff_rows)
+            
+            return ExamMatrixV2(
+                metadata=metadata,
+                dimensions=dimensions,
+                matrix=parsed_matrix
+            )
+            
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse V2 matrix response: {e}\nResponse: {result}")
+        except Exception as e:
+            raise ValueError(f"Failed to create V2 matrix: {e}")
+
+    def _extract_json(self, result: str) -> str:
+        """Extract JSON from potential markdown code blocks."""
+        result_text = result.strip()
+        if result_text.startswith("```"):
+            lines = result_text.split("\n")
+            result_text = "\n".join(
+                line
+                for line in lines
+                if not line.strip().startswith("```")
+            )
+        return result_text
 
     async def generate_matrix_stream(
         self, request: GenerateMatrixRequest
@@ -435,3 +538,67 @@ class ExamService:
                 }
             ],
         }
+
+    def generate_matrix_v2_mock(
+        self, request: GenerateMatrixV2Request
+    ) -> ExamMatrixV2:
+        """Generate a mock 3D exam matrix for testing without LLM."""
+        import uuid as uuid_lib
+        
+        topics = [
+            DimensionTopic(id=str(uuid_lib.uuid4()), name=t)
+            for t in request.topics
+        ]
+        difficulties = request.difficulties or ["easy", "medium", "hard"]
+        question_types = request.questionTypes or ["multiple_choice", "fill_in_blank", "true_false", "matching"]
+        
+        # Build mock 3D matrix with distributed questions
+        total_q = request.totalQuestions
+        total_p = request.totalPoints
+        
+        # Distribute questions across cells
+        num_topics = len(topics)
+        num_diffs = len(difficulties)
+        num_qtypes = len(question_types)
+        total_cells = num_topics * num_diffs * num_qtypes
+        
+        base_count = total_q // total_cells if total_cells > 0 else 0
+        base_points = total_p / total_q if total_q > 0 else 1
+        
+        matrix = []
+        remaining_q = total_q
+        
+        for t_idx in range(num_topics):
+            topic_rows = []
+            for d_idx in range(num_diffs):
+                diff_cells = []
+                for qt_idx in range(num_qtypes):
+                    # Give more questions to easy/medium, fewer to hard
+                    modifier = 1.5 if d_idx == 0 else (1.0 if d_idx == 1 else 0.5)
+                    count = max(0, min(remaining_q, int(base_count * modifier)))
+                    
+                    # Last cell gets remaining
+                    if t_idx == num_topics - 1 and d_idx == num_diffs - 1 and qt_idx == num_qtypes - 1:
+                        count = remaining_q
+                    
+                    points = count * base_points * (1 + d_idx * 0.5)  # Harder = more points
+                    remaining_q -= count
+                    
+                    # Use [count, points] array format
+                    diff_cells.append([count, round(points, 1)])
+                topic_rows.append(diff_cells)
+            matrix.append(topic_rows)
+        
+        return ExamMatrixV2(
+            metadata=MatrixMetadata(
+                id=str(uuid_lib.uuid4()),
+                name=request.name,
+                created_at=datetime.utcnow().isoformat()
+            ),
+            dimensions=MatrixDimensions(
+                topics=topics,
+                difficulties=difficulties,
+                question_types=question_types
+            ),
+            matrix=matrix
+        )
