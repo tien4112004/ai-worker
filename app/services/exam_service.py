@@ -1,6 +1,8 @@
 """Service for exam and question generation."""
 
 import json
+import logging
+import re
 import uuid
 from datetime import datetime
 from typing import Any, AsyncGenerator, Dict, List
@@ -11,9 +13,7 @@ from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.schemas.exam_content import (
     ExamMatrix,
-    ExamMatrixV2,
     GenerateMatrixRequest,
-    GenerateMatrixV2Request,
     GenerateQuestionsRequest,
     GenerationProgress,
     MatrixCell,
@@ -27,6 +27,8 @@ from app.schemas.exam_content import (
     Topic,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class ExamService:
     """Service for generating exams and questions using AI."""
@@ -39,94 +41,10 @@ class ExamService:
         """Render a system prompt from the prompt store."""
         return self.prompt_store.render(key, vars)
 
-    def _convert_matrix_items_to_exam_matrix(
-        self, items: List[MatrixItem], request: GenerateMatrixRequest
-    ) -> ExamMatrix:
-        """Convert legacy MatrixItem list to new ExamMatrix structure."""
-        # Extract unique topics
-        unique_topics = {}
-        for item in items:
-            if item.topic not in unique_topics:
-                unique_topics[item.topic] = Topic(
-                    id=str(uuid.uuid4()),
-                    name=item.topic,
-                    description=None
-                )
-        
-        # Group by difficulty to create contents
-        difficulty_groups = {"easy": 0, "medium": 0, "hard": 0}
-        for item in items:
-            difficulty_groups[item.difficulty] += item.count
-        
-        contents = [
-            MatrixContent(
-                difficulty=difficulty,
-                number_of_questions=count,
-                selected_questions=None
-            )
-            for difficulty, count in difficulty_groups.items()
-            if count > 0
-        ]
-        
-        return ExamMatrix(
-            id=str(uuid.uuid4()),
-            name=f"{request.topic} - Grade {request.grade_level}",
-            description=request.content,
-            subject_code=request.topic,  # Using topic as subject code for now
-            target_total_points=request.total_points,
-            topics=list(unique_topics.values()),
-            contents=contents,
-            created_at=datetime.utcnow().isoformat(),
-            updated_at=datetime.utcnow().isoformat(),
-            created_by=None
-        )
-
     # Matrix Generation
     def generate_matrix(self, request: GenerateMatrixRequest) -> ExamMatrix:
         """
         Generate an exam matrix using LLM.
-
-        Args:
-            request: Request containing exam requirements
-
-        Returns:
-            ExamMatrix object representing the exam structure
-        """
-        sys_msg = self._system("exam.matrix.system", None)
-        usr_msg = self._system("exam.matrix.user", request.to_dict())
-
-        result = self.llm_executor.batch(
-            provider=request.provider,
-            model=request.model,
-            messages=[
-                SystemMessage(content=sys_msg),
-                HumanMessage(content=usr_msg),
-            ],
-        )
-
-        # Parse the JSON response
-        try:
-            # Extract JSON from potential markdown code blocks
-            result_text = result.strip()
-            if result_text.startswith("```"):
-                # Remove markdown code block markers
-                lines = result_text.split("\n")
-                result_text = "\n".join(
-                    line
-                    for line in lines
-                    if not line.strip().startswith("```")
-                )
-
-            matrix_data = json.loads(result_text)
-            matrix_items = [MatrixItem(**item) for item in matrix_data]
-            return self._convert_matrix_items_to_exam_matrix(matrix_items, request)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse matrix response: {e}\nResponse: {result}")
-
-    # V2 Matrix Generation - 3D Format
-    def generate_matrix_v2(self, request: GenerateMatrixV2Request) -> ExamMatrixV2:
-        """
-        Generate a 3D exam matrix using LLM.
 
         The matrix is indexed as: matrix[topic_index][difficulty_index][question_type_index]
         Each cell contains {count, points} for that combination.
@@ -135,7 +53,7 @@ class ExamService:
             request: Request containing exam requirements with topics list
 
         Returns:
-            ExamMatrixV2 object representing the 3D exam structure
+            ExamMatrix object representing the exam structure
         """
         # Prepare prompt variables
         prompt_vars = request.to_dict()
@@ -144,8 +62,8 @@ class ExamService:
             "multiple_choice", "fill_in_blank", "true_false", "matching"
         ]
         
-        sys_msg = self._system("exam.matrix.v2.system", prompt_vars)
-        usr_msg = self._system("exam.matrix.v2.user", prompt_vars)
+        sys_msg = self._system("exam.matrix.system", prompt_vars)
+        usr_msg = self._system("exam.matrix.user", prompt_vars)
 
         result = self.llm_executor.batch(
             provider=request.provider,
@@ -161,7 +79,6 @@ class ExamService:
             result_text = self._extract_json(result)
             matrix_data = json.loads(result_text)
             
-            # Parse into ExamMatrixV2 structure
             metadata = MatrixMetadata(
                 id=matrix_data.get("metadata", {}).get("id", str(uuid.uuid4())),
                 name=matrix_data.get("metadata", {}).get("name", request.name),
@@ -181,7 +98,7 @@ class ExamService:
                 question_types=dims_data.get("questionTypes", ["multiple_choice", "fill_in_blank", "true_false", "matching"])
             )
             
-            # Parse 3D matrix - expect [count, points] arrays
+            # Parse matrix - convert to "count:points" string format
             raw_matrix = matrix_data.get("matrix", [])
             parsed_matrix = []
             for topic_row in raw_matrix:
@@ -189,63 +106,44 @@ class ExamService:
                 for diff_row in topic_row:
                     qtype_cells = []
                     for cell in diff_row:
-                        # Handle both array format [count, points] and object format {count, points}
-                        if isinstance(cell, list):
-                            qtype_cells.append([int(cell[0]), float(cell[1])])
+                        if isinstance(cell, str):
+                            qtype_cells.append(cell)
+                        elif isinstance(cell, list):
+                            qtype_cells.append(f"{int(cell[0])}:{float(cell[1])}")
                         else:
-                            qtype_cells.append([cell.get("count", 0), cell.get("points", 0)])
+                            qtype_cells.append(f"{cell.get('count', 0)}:{cell.get('points', 0)}")
                     diff_rows.append(qtype_cells)
                 parsed_matrix.append(diff_rows)
             
-            return ExamMatrixV2(
+            return ExamMatrix(
                 metadata=metadata,
                 dimensions=dimensions,
                 matrix=parsed_matrix
             )
             
         except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse V2 matrix response: {e}\nResponse: {result}")
+            # Truncate response in error message to prevent overwhelming logs
+            response_preview = result[:500] + "..." if len(result) > 500 else result
+            raise ValueError(f"Failed to parse matrix response: {e}\nResponse preview: {response_preview}")
         except Exception as e:
-            raise ValueError(f"Failed to create V2 matrix: {e}")
+            raise ValueError(f"Failed to create matrix: {e}")
 
     def _extract_json(self, result: str) -> str:
-        """Extract JSON from potential markdown code blocks."""
+        """Extract JSON from potential markdown code blocks.
+        
+        Uses regex to robustly extract content between code fences.
+        """
         result_text = result.strip()
-        if result_text.startswith("```"):
-            lines = result_text.split("\n")
-            result_text = "\n".join(
-                line
-                for line in lines
-                if not line.strip().startswith("```")
-            )
+        
+        # Try to extract JSON from code fences using regex
+        # Matches ```json or ``` followed by content and closing ```
+        code_fence_pattern = r"```(?:json)?\s*\n?(.*?)\n?```"
+        match = re.search(code_fence_pattern, result_text, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        
+        # Fallback: if no code fences found, return as-is
         return result_text
-
-    async def generate_matrix_stream(
-        self, request: GenerateMatrixRequest
-    ) -> AsyncGenerator[str, None]:
-        """
-        Generate an exam matrix using LLM with streaming.
-
-        Args:
-            request: Request containing exam requirements
-
-        Yields:
-            Chunks of the generated matrix as they arrive
-        """
-        sys_msg = self._system("exam.matrix.system", None)
-        usr_msg = self._system("exam.matrix.user", request.to_dict())
-
-        result = self.llm_executor.stream(
-            provider=request.provider,
-            model=request.model,
-            messages=[
-                SystemMessage(content=sys_msg),
-                HumanMessage(content=usr_msg),
-            ],
-        )
-
-        for chunk in result:
-            yield chunk
 
     # Question Generation from Matrix (Priority 1)
     def generate_questions_from_matrix(
@@ -368,8 +266,9 @@ class ExamService:
                             "message": f"Generated {question_count} of {total_questions} questions...",
                         },
                     }
-            except:
-                pass  # Continue if we can't parse partial response
+            except Exception as e:
+                logger.debug(f"Could not parse partial streaming response: {e}")
+                # Continue streaming - partial parse failures are expected
 
         # Parse final response
         try:
@@ -419,60 +318,6 @@ class ExamService:
                 "status": "ERROR",
                 "error": f"Failed to process questions: {str(e)}",
             }
-
-    # Mock methods for testing
-    def generate_matrix_mock(
-        self, request: GenerateMatrixRequest
-    ) -> ExamMatrix:
-        """Generate a mock exam matrix for testing."""
-        matrix_items = [
-            MatrixItem(
-                topic="Basic Addition",
-                question_type="multiple_choice",
-                count=3,
-                points_each=2,
-                difficulty="easy",
-                requires_context=False,
-            ),
-            MatrixItem(
-                topic="Number Recognition",
-                question_type="true_false",
-                count=2,
-                points_each=1,
-                difficulty="easy",
-                requires_context=False,
-            ),
-        ]
-        return self._convert_matrix_items_to_exam_matrix(matrix_items, request)
-
-    async def generate_matrix_stream_mock(
-        self, request: GenerateMatrixRequest
-    ) -> AsyncGenerator[str, None]:
-        """Generate a mock matrix stream for testing."""
-        mock_matrix = [
-            {
-                "topic": "Basic Addition",
-                "question_type": "multiple_choice",
-                "count": 3,
-                "points_each": 2,
-                "difficulty": "easy",
-                "requires_context": False,
-            },
-            {
-                "topic": "Number Recognition",
-                "question_type": "true_false",
-                "count": 2,
-                "points_each": 1,
-                "difficulty": "easy",
-                "requires_context": False,
-            },
-        ]
-
-        result = json.dumps(mock_matrix, indent=2)
-        # Simulate streaming by yielding chunks
-        chunk_size = 50
-        for i in range(0, len(result), chunk_size):
-            yield result[i : i + chunk_size]
 
     def generate_questions_mock(
         self, request: GenerateQuestionsRequest
@@ -539,20 +384,18 @@ class ExamService:
             ],
         }
 
-    def generate_matrix_v2_mock(
-        self, request: GenerateMatrixV2Request
-    ) -> ExamMatrixV2:
-        """Generate a mock 3D exam matrix for testing without LLM."""
-        import uuid as uuid_lib
-        
+    def generate_matrix_mock(
+        self, request: GenerateMatrixRequest
+    ) -> ExamMatrix:
+        """Generate a mock exam matrix for testing without LLM."""
         topics = [
-            DimensionTopic(id=str(uuid_lib.uuid4()), name=t)
+            DimensionTopic(id=str(uuid.uuid4()), name=t)
             for t in request.topics
         ]
         difficulties = request.difficulties or ["easy", "medium", "hard"]
         question_types = request.questionTypes or ["multiple_choice", "fill_in_blank", "true_false", "matching"]
         
-        # Build mock 3D matrix with distributed questions
+        # Build mock matrix with distributed questions
         total_q = request.totalQuestions
         total_p = request.totalPoints
         
@@ -584,12 +427,12 @@ class ExamService:
                     points = count * base_points * (1 + d_idx * 0.5)  # Harder = more points
                     remaining_q -= count
                     
-                    # Use [count, points] array format
-                    diff_cells.append([count, round(points, 1)])
+                    # Use "count:points" string format
+                    diff_cells.append(f"{count}:{round(points, 1)}")
                 topic_rows.append(diff_cells)
             matrix.append(topic_rows)
         
-        return ExamMatrixV2(
+        return ExamMatrix(
             metadata=MatrixMetadata(
                 id=str(uuid_lib.uuid4()),
                 name=request.name,

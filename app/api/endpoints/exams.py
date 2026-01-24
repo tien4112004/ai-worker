@@ -9,9 +9,7 @@ from sse_starlette.sse import EventSourceResponse
 from app.depends import ExamServiceDep
 from app.schemas.exam_content import (
     ExamMatrix,
-    ExamMatrixV2,
     GenerateMatrixRequest,
-    GenerateMatrixV2Request,
     GenerateQuestionsRequest,
     MatrixItem,
     QuestionWithContext,
@@ -20,36 +18,9 @@ from app.schemas.exam_content import (
 router = APIRouter(tags=["exams"])
 
 
-# Matrix Generation Endpoints
 @router.post("/exams/generate-matrix", response_model=ExamMatrix)
 def generate_exam_matrix(
     request_body: GenerateMatrixRequest, svc: ExamServiceDep
-):
-    """
-    Generate an exam matrix based on topic and requirements.
-
-    This endpoint creates a structured blueprint for an exam, specifying
-    what questions should be generated, their types, and requirements.
-    """
-    try:
-        result = svc.generate_matrix(request_body)
-        return result
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate matrix: {str(e)}",
-        )
-
-
-# V2 Matrix Generation - 3D Format
-@router.post("/exams/generate-matrix/v2", response_model=ExamMatrixV2)
-def generate_exam_matrix_v2(
-    request_body: GenerateMatrixV2Request, svc: ExamServiceDep
 ):
     """
     Generate a 3D exam matrix based on topics, difficulties, and question types.
@@ -63,7 +34,7 @@ def generate_exam_matrix_v2(
     and total points for that combination.
     """
     try:
-        result = svc.generate_matrix_v2(request_body)
+        result = svc.generate_matrix(request_body)
         return result
     except ValueError as e:
         raise HTTPException(
@@ -73,7 +44,7 @@ def generate_exam_matrix_v2(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate V2 matrix: {str(e)}",
+            detail=f"Failed to generate matrix: {str(e)}",
         )
 
 
@@ -214,12 +185,12 @@ async def generate_questions_stream_mock(
     return EventSourceResponse(event_stream(), media_type="text/event-stream")
 
 
-# V2 Mock Endpoint
-@router.post("/exams/generate-matrix/v2/mock", response_model=ExamMatrixV2)
-def generate_exam_matrix_v2_mock(
-    request_body: GenerateMatrixV2Request, svc: ExamServiceDep
+# 3D Mock Endpoint
+@router.post("/exams/generate-matrix/mock", response_model=ExamMatrix)
+def generate_exam_matrix_mock(
+    request_body: GenerateMatrixRequest, svc: ExamServiceDep
 ):
     """Generate a mock 3D exam matrix for testing without LLM calls."""
-    result = svc.generate_matrix_v2_mock(request_body)
+    result = svc.generate_matrix_mock(request_body)
     return result
 

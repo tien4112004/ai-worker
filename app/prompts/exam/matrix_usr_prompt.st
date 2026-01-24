@@ -1,22 +1,31 @@
 Generate an exam matrix with the following specifications:
 
 **Exam Details:**
-- Topic: ${topic}
+- Name: ${name}
 - Grade Level: ${grade_level}
-- Difficulty: ${difficulty}
 - Total Questions: ${total_questions}
 - Total Points: ${total_points}
 
-**Additional Requirements:**
-${content}
+**Topics to Cover:**
+${topics}
 
-**Preferred Question Types:**
+**Difficulty Levels:**
+${difficulties}
+
+**Question Types to Use:**
 ${question_types}
 
-Generate a comprehensive exam matrix that covers the topic thoroughly and is appropriate for the grade level. Ensure questions are distributed across different aspects of the topic and use diverse question types suitable for the grade level.
+**Additional Requirements:**
+${additional_requirements}
+
+Generate a comprehensive 3D exam matrix that:
+1. Distributes questions across all topics fairly
+2. Balances difficulty levels appropriately for the grade level
+3. Uses a variety of question types suitable for each topic
+4. Ensures total questions = ${total_questions}
+5. Ensures total points = ${total_points}
 
 Remember:
-- Total questions MUST equal ${total_questions}
-- Total points MUST equal ${total_points}
-- Return ONLY a valid JSON array of matrix items
+- Return ONLY a valid JSON object matching the specified structure
 - No explanatory text before or after the JSON
+- Generate unique UUIDs for topic IDs

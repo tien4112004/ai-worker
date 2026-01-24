@@ -31,24 +31,6 @@ class MatrixContent(BaseModel):
         populate_by_name = True
 
 
-class ExamMatrix(BaseModel):
-    """Represents the complete exam matrix structure."""
-    
-    id: str = Field(..., description="Unique identifier for this matrix")
-    name: str = Field(..., description="Matrix name")
-    description: Optional[str] = Field(None, description="Optional description")
-    subjectCode: str = Field(..., description="Subject code of the exam", alias="subject_code")
-    targetTotalPoints: int = Field(..., ge=1, description="Target total points for the exam", alias="target_total_points")
-    topics: List[Topic] = Field(..., description="Topics included in this matrix")
-    contents: List[MatrixContent] = Field(..., description="Content cells for different difficulties")
-    createdAt: Optional[str] = Field(None, description="ISO timestamp of creation", alias="created_at")
-    updatedAt: Optional[str] = Field(None, description="ISO timestamp of last update", alias="updated_at")
-    createdBy: Optional[str] = Field(None, description="User ID of creator", alias="created_by")
-    
-    class Config:
-        populate_by_name = True
-
-
 # ============================================================================
 # New 3D Matrix Format - [topic][difficulty][question_type]
 # ============================================================================
@@ -56,20 +38,21 @@ class ExamMatrix(BaseModel):
 class MatrixCell(BaseModel):
     """A cell in the 3D matrix representing question requirements.
     
-    When serialized, this becomes [count, points] array.
+    When serialized, this becomes "count:points" string format.
     """
     
     count: int = Field(0, ge=0, description="Number of questions required")
     points: float = Field(0, ge=0, description="Total points for this cell")
     
-    def to_array(self) -> list:
-        """Convert to [count, points] array format."""
-        return [self.count, self.points]
+    def to_string(self) -> str:
+        """Convert to 'count:points' string format."""
+        return f"{self.count}:{self.points}"
     
     @classmethod
-    def from_array(cls, arr: list) -> "MatrixCell":
-        """Create from [count, points] array format."""
-        return cls(count=int(arr[0]), points=float(arr[1]))
+    def from_string(cls, s: str) -> "MatrixCell":
+        """Create from 'count:points' string format."""
+        parts = s.split(":")
+        return cls(count=int(parts[0]), points=float(parts[1]))
 
 
 class DimensionTopic(BaseModel):
@@ -108,19 +91,19 @@ class MatrixMetadata(BaseModel):
         populate_by_name = True
 
 
-class ExamMatrixV2(BaseModel):
+class ExamMatrix(BaseModel):
     """
-    New 3D exam matrix structure.
+    3D exam matrix structure.
     
     Matrix is indexed as: matrix[topic_index][difficulty_index][question_type_index]
-    Each cell is [count, points] array for that combination.
+    Each cell is "count:points" string format for that combination.
     """
     
     metadata: MatrixMetadata = Field(..., description="Matrix metadata")
     dimensions: MatrixDimensions = Field(..., description="Matrix dimensions")
-    matrix: List[List[List[List]]] = Field(
+    matrix: List[List[List[str]]] = Field(
         ..., 
-        description="3D matrix: [topic][difficulty][question_type] -> [count, points]"
+        description="3D matrix: [topic][difficulty][question_type] -> 'count:points'"
     )
     
     class Config:
@@ -131,8 +114,9 @@ class ExamMatrixV2(BaseModel):
         total = 0
         for topic_row in self.matrix:
             for diff_row in topic_row:
-                for cell in diff_row:
-                    total += int(cell[0])  # count is first element
+                for cell_str in diff_row:
+                    count, _ = cell_str.split(":")
+                    total += int(count)
         return total
     
     def get_total_points(self) -> float:
@@ -140,17 +124,18 @@ class ExamMatrixV2(BaseModel):
         total = 0.0
         for topic_row in self.matrix:
             for diff_row in topic_row:
-                for cell in diff_row:
-                    total += float(cell[1])  # points is second element
+                for cell_str in diff_row:
+                    _, points = cell_str.split(":")
+                    total += float(points)
         return total
     
-    def get_cell(self, topic_idx: int, difficulty_idx: int, qtype_idx: int) -> List:
-        """Get a specific cell from the matrix as [count, points]."""
+    def get_cell(self, topic_idx: int, difficulty_idx: int, qtype_idx: int) -> str:
+        """Get a specific cell from the matrix as 'count:points' string."""
         return self.matrix[topic_idx][difficulty_idx][qtype_idx]
 
 
-class GenerateMatrixV2Request(BaseModel):
-    """Request to generate a new 3D exam matrix using AI."""
+class GenerateMatrixRequest(BaseModel):
+    """Request to generate a 3D exam matrix using AI."""
     
     name: str = Field(..., description="Name for the exam matrix")
     topics: List[str] = Field(..., min_length=1, description="List of topic names to include")
@@ -172,7 +157,7 @@ class GenerateMatrixV2Request(BaseModel):
         alias="additional_requirements"
     )
     provider: str = Field(default="gemini", description="LLM provider")
-    model: str = Field(default="gemini-2.0-flash-exp", description="LLM model to use")
+    model: str = Field(default="gemini-2.5-flash", description="LLM model to use")
     
     class Config:
         populate_by_name = True
@@ -210,51 +195,6 @@ class MatrixItem(BaseModel):
     context_type: Optional[
         Literal["reading_passage", "image", "audio", "video"]
     ] = Field(None, description="Type of context if required")
-
-
-class GenerateMatrixRequest(BaseModel):
-    """Request to generate an exam matrix using AI."""
-
-    topic: str = Field(..., description="Main topic of the exam")
-    grade_level: Literal["K", "1", "2", "3", "4", "5"] = Field(
-        ..., description="Grade level", alias="gradeLevel"
-    )
-    difficulty: Literal["easy", "medium", "hard"] = Field(
-        ..., description="Overall difficulty level"
-    )
-    content: Optional[str] = Field(
-        None, description="Additional content or requirements for the exam"
-    )
-    total_questions: int = Field(..., ge=1, description="Total number of questions", alias="totalQuestions")
-    total_points: int = Field(..., ge=1, description="Total points for the exam", alias="totalPoints")
-    question_types: Optional[
-        List[
-            Literal[
-                "multiple_choice", "true_false", "fill_blank", "long_answer", "matching"
-            ]
-        ]
-    ] = Field(None, description="Preferred question types", alias="questionTypes")
-    provider: str = Field(default="gemini", description="LLM provider")
-    model: str = Field(
-        default="gemini-2.0-flash-exp", description="LLM model to use"
-    )
-    
-    class Config:
-        populate_by_name = True
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for prompt rendering."""
-        return {
-            "topic": self.topic,
-            "grade_level": self.grade_level,
-            "difficulty": self.difficulty,
-            "content": self.content or "",
-            "total_questions": self.total_questions,
-            "total_points": self.total_points,
-            "question_types": (
-                ", ".join(self.question_types) if self.question_types else "any"
-            ),
-        }
 
 
 class QuestionContext(BaseModel):
