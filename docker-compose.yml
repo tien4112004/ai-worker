@@ -73,7 +73,7 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - ai-worker-network
+      - default
     deploy:
       resources:
         limits:
@@ -109,4 +109,4 @@ volumes:
 networks:
   default:
     external: true
-    name: be_default
+    name: datn-be_default

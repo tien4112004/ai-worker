@@ -20,3 +20,15 @@ prompts:
   mindmap.user:
     path: "mindmap/usr_prompt.st"
     format: "st"
+  exam.matrix.system:
+    path: "exam/matrix_sys_prompt.st"
+    format: "st"
+  exam.matrix.user:
+    path: "exam/matrix_usr_prompt.st"
+    format: "st"
+  exam.questions.system:
+    path: "exam/questions_sys_prompt.st"
+    format: "st"
+  exam.questions.user:
+    path: "exam/questions_usr_prompt.st"
+    format: "st"

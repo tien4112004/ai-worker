@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.services.content_service import ContentService
+from app.services.exam_service import ExamService
 
 
 @asynccontextmanager
@@ -19,14 +20,25 @@ async def lifespan(app: FastAPI):
     content_service = ContentService(
         llm_executor=llm_executor, prompt_store=prompt_store
     )
+    exam_service = ExamService(
+        llm_executor=llm_executor, prompt_store=prompt_store
+    )
 
     app.state.settings = settings
     app.state.content_service = content_service
+    app.state.exam_service = exam_service
 
     def init_vertexai():
         """Initialize Vertex AI settings."""
+        import os
         import vertexai
         from google.oauth2 import service_account
+
+        # Skip initialization if service account file doesn't exist (for testing/mock mode)
+        if not os.path.exists(settings.service_account_json):
+            print(f"Warning: Service account file not found at {settings.service_account_json}")
+            print("Vertex AI initialization skipped - using mock mode")
+            return
 
         service_account_info = json.load(open(settings.service_account_json))
         credentials = service_account.Credentials.from_service_account_info(
