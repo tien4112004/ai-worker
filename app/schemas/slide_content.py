@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -12,15 +13,26 @@ class OutlineGenerateRequest(BaseModel):
     slide_count: int = Field(
         ..., description="The number of slides to generate"
     )
+    grade: Optional[str] = Field(
+        None, max_length=50, description="The grade level for the content"
+    )
+    subject: Optional[str] = Field(
+        None, max_length=100, description="The subject area for the content"
+    )
 
     def to_dict(self):
-        return {
+        result = {
             "topic": self.topic,
             "model": self.model,
             "provider": self.provider,
             "language": self.language,
             "slide_count": self.slide_count,
         }
+        if self.grade:
+            result["grade"] = self.grade
+        if self.subject:
+            result["subject"] = self.subject
+        return result
 
 
 # Request and Response models for presentation generation
@@ -35,9 +47,15 @@ class PresentationGenerateRequest(BaseModel):
     meta_data: dict | None = Field(
         None, description="Additional metadata for the presentation"
     )
+    grade: Optional[str] = Field(
+        None, max_length=50, description="The grade level for the content"
+    )
+    subject: Optional[str] = Field(
+        None, max_length=100, description="The subject area for the content"
+    )
 
     def to_dict(self):
-        return {
+        result = {
             "model": self.model,
             "provider": self.provider,
             "language": self.language,
@@ -45,3 +63,8 @@ class PresentationGenerateRequest(BaseModel):
             "outline": self.outline,
             "meta_data": self.meta_data,
         }
+        if self.grade:
+            result["grade"] = self.grade
+        if self.subject:
+            result["subject"] = self.subject
+        return result
