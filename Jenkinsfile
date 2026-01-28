@@ -9,7 +9,7 @@ pipeline {
         IMAGE_NAME = "${DOCKER_REGISTRY}/${GITHUB_REPO}"
         DOCKER_COMPOSE_FILE = 'docker-compose.prod.yml'
         DEPLOY_DIR = '/opt/ai-worker'
-        ENV_FILE = '/opt/ai-worker/.env.prod'
+        ENV_FILE = '/opt/ai-worker/.env'
         CONTAINER_NAME = 'ai-worker-aiprimary'
     }
 

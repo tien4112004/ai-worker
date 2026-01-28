@@ -71,8 +71,9 @@ docker-compose*.yml
 Dockerfile*
 .dockerignore
 
-# Scripts
-scripts/
+# Scripts (excluding test scripts that need to be in the image)
+scripts/build-image.sh
+scripts/setup-pre-commit.sh
 Makefile
 
 # Test files
