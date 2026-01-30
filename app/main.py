@@ -4,6 +4,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import aiplatform
+from openinference.instrumentation.google_genai import GoogleGenAIInstrumentor
+from openinference.instrumentation.langchain import LangChainInstrumentor
+from phoenix.otel import register
+from rich.repr import auto
 
 from app.api.router import api
 from app.core.config import settings
@@ -15,10 +19,21 @@ from app.services.exam_service import ExamService
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
+    llm_tracer = register(
+        project_name=settings.phoenix_project_name,
+        endpoint=settings.phoenix_collector_endpoint,
+        auto_instrument=True,
+    )
+
+    LangChainInstrumentor().instrument(tracer_provider=llm_tracer)
+    GoogleGenAIInstrumentor().instrument(tracer_provider=llm_tracer)
+
     prompt_store = PromptStore()
     llm_executor = LLMExecutor()
     content_service = ContentService(
-        llm_executor=llm_executor, prompt_store=prompt_store
+        llm_executor=llm_executor,
+        prompt_store=prompt_store,
     )
     exam_service = ExamService(
         llm_executor=llm_executor, prompt_store=prompt_store

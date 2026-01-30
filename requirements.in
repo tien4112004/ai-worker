@@ -17,14 +17,13 @@ langchain-google-genai>=1.0.1
 langchain-google-vertexai>=2.1.1
 
 # Google AI Libraries
-google-generativeai
-google-cloud-aiplatform
-google-auth
-vertexai
+google-generativeai>=0.8.0
+google-cloud-aiplatform>=1.70.0
+google-auth>=2.30.0
 
-grpcio==1.75.0
-protobuf==4.25.3
-google-api-core==2.19.1
+grpcio>=1.60.0
+protobuf>=4.25.3
+google-api-core>=2.15.0 
 
 # OpenAI
 openai>=1.107.0
@@ -43,4 +42,10 @@ psycopg2-binary>=2.9.9  # PostgreSQL adapter
 GitPython>=3.1.45
 Jinja2>=3.1.6
 
-sse-starlette==3.0.2    # via langsmith
+sse-starlette==3.0.2
+
+# Observability
+arize-phoenix>=4.29.0
+deprecated>=1.2.14
+openinference-instrumentation-langchain>=0.1.56
+openinference-instrumentation-google-genai>=0.1.8

@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     )
 
     logger: ClassVar[logging.Logger] = logging.getLogger("uvicorn.error")
+    phoenix_collector_endpoint: str = os.getenv(
+        "PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces"
+    )
+    phoenix_project_name: str = os.getenv("PHOENIX_PROJECT_NAME", "")
 
 
 logging.basicConfig(
