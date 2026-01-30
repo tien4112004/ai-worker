@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from app.depends import ContentServiceDep
+from app.depends import ContentServiceDep, ExamServiceDep
 from app.schemas.image_content import (
     ImageGenerateRequest,
     ImageGenerateResponse,
@@ -16,6 +16,10 @@ from app.schemas.mindmap_content import MindmapGenerateRequest
 from app.schemas.slide_content import (
     OutlineGenerateRequest,
     PresentationGenerateRequest,
+)
+from app.schemas.exam_content import (
+    GenerateQuestionsFromTopicRequest,
+    Question,
 )
 from app.schemas.token_usage import TokenUsage
 from app.utils.server_sent_event import sse_json_by_json, sse_word_by_word
@@ -204,3 +208,40 @@ def generateMindmap_Mock(
     print("Received mock mindmap generation request:", mindmapGenerateRequest)
     result, token_usage = svc.generate_mindmap_mock(mindmapGenerateRequest)
     return GenerateResponse(data=result, token_usage=token_usage)
+
+
+@router.post("/questions/generate", response_model=list[Question])
+def generate_questions(
+    request: GenerateQuestionsFromTopicRequest,
+    svc: ExamServiceDep
+):
+    """
+    Generate questions based on topic and requirements.
+    
+    This endpoint uses AI to create exam questions matching the Question entity schema.
+    """
+    logger.info(f"[QUESTIONS/GENERATE] Received request for topic: {request.topic}, grade: {request.grade_level}")
+    
+    try:
+        result = svc.generate_questions_from_topic(request)
+        logger.info(f"[QUESTIONS/GENERATE] Successfully generated {len(result)} questions")
+        return result
+    except ValueError as e:
+        logger.error(f"[QUESTIONS/GENERATE] Validation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except FileNotFoundError as e:
+        logger.error(f"[QUESTIONS/GENERATE] File not found: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Prompt template not found: {str(e)}"
+        )
+    except Exception as e:
+        logger.error(f"[QUESTIONS/GENERATE] Error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate questions: {str(e)}"
+        )
+

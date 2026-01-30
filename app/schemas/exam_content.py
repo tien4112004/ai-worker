@@ -206,88 +206,93 @@ class QuestionContext(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 
 
-class MultipleChoiceQuestion(BaseModel):
-    """Multiple choice question."""
-
-    question_type: Literal["multiple_choice"] = "multiple_choice"
-    content: str = Field(..., description="Question text")
-    answers: List[str] = Field(..., min_length=2, description="Answer options")
-    correct_answer: str = Field(..., description="Correct answer")
-    explanation: Optional[str] = Field(None, description="Explanation of the answer")
-
-
-class TrueFalseQuestion(BaseModel):
-    """True/False question."""
-
-    question_type: Literal["true_false"] = "true_false"
-    content: str = Field(..., description="Question text")
-    correct_answer: bool = Field(..., description="Correct answer (true or false)")
-    explanation: Optional[str] = Field(None, description="Explanation of the answer")
+class MultipleChoiceOption(BaseModel):
+    """Option for multiple choice question."""
+    text: str
+    imageUrl: Optional[str] = Field(None, alias="image_url")
+    isCorrect: bool = Field(..., alias="is_correct")
+    
+    class Config:
+        populate_by_name = True
 
 
-class FillBlankQuestion(BaseModel):
-    """Fill in the blank question."""
+class MultipleChoiceData(BaseModel):
+    """Data for multiple choice question."""
+    type: Literal["MULTIPLE_CHOICE"] = Field(default="MULTIPLE_CHOICE", description="Question type discriminator")
+    options: List[MultipleChoiceOption] = Field(..., min_length=4, max_length=4)
+    shuffleOptions: bool = Field(True, alias="shuffle_options")
+    
+    class Config:
+        populate_by_name = True
 
-    question_type: Literal["fill_blank"] = "fill_blank"
-    content: str = Field(
-        ..., description="Question text with ____ for the blank(s)"
-    )
-    correct_answer: str = Field(..., description="Correct answer to fill the blank")
-    explanation: Optional[str] = Field(None, description="Explanation of the answer")
+
+class BlankSegment(BaseModel):
+    """Segment for fill in the blank question."""
+    type: Literal["TEXT", "BLANK"]
+    content: str = Field(default="")
+    acceptableAnswers: Optional[List[str]] = Field(None, alias="acceptable_answers")
+    
+    class Config:
+        populate_by_name = True
 
 
-class LongAnswerQuestion(BaseModel):
-    """Long answer/essay question."""
-
-    question_type: Literal["long_answer"] = "long_answer"
-    content: str = Field(..., description="Question text")
-    correct_answer: str = Field(
-        ..., description="Sample correct answer or key points"
-    )
-    explanation: Optional[str] = Field(None, description="Grading guidelines")
+class FillInBlankData(BaseModel):
+    """Data for fill in the blank question."""
+    type: Literal["FILL_IN_BLANK"] = Field(default="FILL_IN_BLANK", description="Question type discriminator")
+    segments: List[BlankSegment]
+    caseSensitive: bool = Field(False, alias="case_sensitive")
+    
+    class Config:
+        populate_by_name = True
 
 
 class MatchingPair(BaseModel):
-    """A pair for matching questions."""
-
+    """Pair for matching question."""
     left: str
+    leftImageUrl: Optional[str] = Field(None, alias="left_image_url")
     right: str
+    rightImageUrl: Optional[str] = Field(None, alias="right_image_url")
+    
+    class Config:
+        populate_by_name = True
 
 
-class MatchingQuestion(BaseModel):
-    """Matching question."""
-
-    question_type: Literal["matching"] = "matching"
-    content: str = Field(..., description="Question instruction")
-    left: List[str] = Field(..., description="Left side items")
-    right: List[str] = Field(..., description="Right side items")
-    correct_answer: List[MatchingPair] = Field(
-        ..., description="Correct matching pairs"
-    )
-    explanation: Optional[str] = Field(None, description="Explanation")
+class MatchingData(BaseModel):
+    """Data for matching question."""
+    type: Literal["MATCHING"] = Field(default="MATCHING", description="Question type discriminator")
+    pairs: List[MatchingPair] = Field(..., min_length=4)
+    shufflePairs: bool = Field(True, alias="shuffle_pairs")
+    
+    class Config:
+        populate_by_name = True
 
 
-Question = Union[
-    MultipleChoiceQuestion,
-    TrueFalseQuestion,
-    FillBlankQuestion,
-    LongAnswerQuestion,
-    MatchingQuestion,
-]
+class OpenEndedData(BaseModel):
+    """Data for open ended question."""
+    type: Literal["OPEN_ENDED"] = Field(default="OPEN_ENDED", description="Question type discriminator")
+    expectedAnswer: str = Field(..., alias="expected_answer")
+    maxLength: Optional[int] = Field(500, alias="max_length")
+    
+    class Config:
+        populate_by_name = True
 
 
-class QuestionWithContext(BaseModel):
-    """Question with optional context."""
-
-    context: Optional[QuestionContext] = None
-    question_number: Optional[int] = Field(
-        None, description="Order within context (1, 2, 3...)"
-    )
-    topic: str
-    grade_level: Literal["K", "1", "2", "3", "4", "5"]
-    difficulty: Literal["easy", "medium", "hard"]
-    question: Question
-    default_points: int = Field(default=1, ge=1)
+class Question(BaseModel):
+    """Question entity matching backend Question class."""
+    
+    type: Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
+    difficulty: Literal["KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"]
+    title: str = Field(..., description="Question text/prompt")
+    titleImageUrl: Optional[str] = Field(None, alias="title_image_url")
+    explanation: Optional[str] = None
+    grade: Literal["K", "1", "2", "3", "4", "5"]
+    chapter: str = Field(..., description="Topic/chapter name")
+    subject: str = Field(..., description="Subject code: T, TV, TA")
+    data: Union[MultipleChoiceData, FillInBlankData, MatchingData, OpenEndedData]
+    point: float = Field(default=1.0, ge=0)
+    
+    class Config:
+        populate_by_name = True
 
 
 class GenerateQuestionsRequest(BaseModel):
@@ -296,7 +301,7 @@ class GenerateQuestionsRequest(BaseModel):
     matrix: List[MatrixItem] = Field(..., description="Exam matrix to generate from")
     provider: str = Field(default="gemini", description="LLM provider")
     model: str = Field(
-        default="gemini-2.0-flash-exp", description="LLM model to use"
+        default="gemini-2.5-flash", description="LLM model to use"
     )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -320,5 +325,32 @@ class QuestionGenerationStatus(BaseModel):
 
     status: Literal["GENERATING", "COMPLETED", "ERROR"]
     progress: Optional[GenerationProgress] = None
-    questions: Optional[List[QuestionWithContext]] = None
+    questions: Optional[List[Question]] = None
     error: Optional[str] = None
+
+
+class GenerateQuestionsFromTopicRequest(BaseModel):
+    """Request to generate questions from a topic."""
+    
+    topic: str = Field(..., description="Topic or chapter name")
+    grade_level: Literal["K", "1", "2", "3", "4", "5"]
+    subject_code: str = Field(..., description="Subject code: T, TV, TA")
+    
+    questions_per_difficulty: Dict[Literal["EASY", "MEDIUM", "HARD"], int] = Field(
+        ..., 
+        description="Number of questions for each difficulty level"
+    )
+    
+    question_types: List[Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]] = Field(
+        ...,
+        description="Types of questions to generate"
+    )
+    
+    additional_requirements: Optional[str] = Field(
+        None,
+        description="Additional requirements or context for question generation"
+    )
+    
+    # LLM configuration
+    provider: Optional[str] = Field(default="google", description="LLM provider")
+    model: Optional[str] = Field(default="gemini-2.5-flash", description="LLM model")

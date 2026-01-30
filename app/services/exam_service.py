@@ -12,8 +12,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.schemas.exam_content import (
+    DimensionTopic,
     ExamMatrix,
     GenerateMatrixRequest,
+    GenerateQuestionsFromTopicRequest,
     GenerateQuestionsRequest,
     GenerationProgress,
     MatrixCell,
@@ -21,9 +23,8 @@ from app.schemas.exam_content import (
     MatrixDimensions,
     MatrixItem,
     MatrixMetadata,
-    DimensionTopic,
+    Question,
     QuestionGenerationStatus,
-    QuestionWithContext,
     Topic,
 )
 
@@ -148,68 +149,15 @@ class ExamService:
     # Question Generation from Matrix (Priority 1)
     def generate_questions_from_matrix(
         self, request: GenerateQuestionsRequest
-    ) -> List[QuestionWithContext]:
+    ) -> List[Question]:
         """
-        Generate questions based on an exam matrix.
-
-        Args:
-            request: Request containing the matrix and generation parameters
-
-        Returns:
-            List of generated questions with their contexts
+        DEPRECATED: Legacy matrix-based generation.
+        Use generate_questions_from_topic instead.
         """
-        sys_msg = self._system("exam.questions.system", None)
-        usr_msg = self._system("exam.questions.user", request.to_dict())
-
-        result = self.llm_executor.batch(
-            provider=request.provider,
-            model=request.model,
-            messages=[
-                SystemMessage(content=sys_msg),
-                HumanMessage(content=usr_msg),
-            ],
+        raise NotImplementedError(
+            "Matrix-based question generation is deprecated. "
+            "Use /questions/generate endpoint with GenerateQuestionsFromTopicRequest instead."
         )
-
-        # Parse the JSON response
-        try:
-            # Extract JSON from potential markdown code blocks
-            result_text = result.strip()
-            if result_text.startswith("```"):
-                lines = result_text.split("\n")
-                result_text = "\n".join(
-                    line
-                    for line in lines
-                    if not line.strip().startswith("```")
-                )
-
-            questions_data = json.loads(result_text)
-
-            # Transform the response into QuestionWithContext objects
-            all_questions = []
-            for item_data in questions_data:
-                context = (
-                    item_data.get("context") if item_data.get("context") else None
-                )
-
-                for q in item_data.get("questions", []):
-                    question_obj = QuestionWithContext(
-                        context=context,
-                        question_number=q.get("question_number"),
-                        topic=q.get("topic"),
-                        grade_level=q.get("grade_level"),
-                        difficulty=q.get("difficulty"),
-                        question=q,  # The question dict will be validated by the union type
-                        default_points=q.get("default_points", 1),
-                    )
-                    all_questions.append(question_obj)
-
-            return all_questions
-        except json.JSONDecodeError as e:
-            raise ValueError(
-                f"Failed to parse questions response: {e}\nResponse: {result}"
-            )
-        except Exception as e:
-            raise ValueError(f"Failed to process questions: {e}")
 
     async def generate_questions_from_matrix_stream(
         self, request: GenerateQuestionsRequest
@@ -321,25 +269,12 @@ class ExamService:
 
     def generate_questions_mock(
         self, request: GenerateQuestionsRequest
-    ) -> List[QuestionWithContext]:
-        """Generate mock questions for testing."""
-        return [
-            QuestionWithContext(
-                context=None,
-                question_number=None,
-                topic="Basic Addition",
-                grade_level="1",
-                difficulty="easy",
-                question={
-                    "question_type": "multiple_choice",
-                    "content": "What is 2 + 2?",
-                    "answers": ["2", "3", "4", "5"],
-                    "correct_answer": "4",
-                    "explanation": "2 plus 2 equals 4",
-                },
-                default_points=2,
-            )
-        ]
+    ) -> List[Question]:
+        """DEPRECATED: Generate mock questions for testing."""
+        raise NotImplementedError(
+            "Matrix-based question generation is deprecated. "
+            "Use /questions/generate endpoint instead."
+        )
 
     async def generate_questions_stream_mock(
         self, request: GenerateQuestionsRequest
@@ -434,7 +369,7 @@ class ExamService:
         
         return ExamMatrix(
             metadata=MatrixMetadata(
-                id=str(uuid_lib.uuid4()),
+                id=str(uuid.uuid4()),
                 name=request.name,
                 created_at=datetime.utcnow().isoformat()
             ),
@@ -445,3 +380,112 @@ class ExamService:
             ),
             matrix=matrix
         )
+
+    def generate_questions_from_topic(
+        self, 
+        request: GenerateQuestionsFromTopicRequest
+    ) -> List[Question]:
+        """
+        Generate questions based on topic and requirements.
+        
+        Args:
+            request: Request containing topic, grade, subject, and requirements
+            
+        Returns:
+            List of generated Question objects
+        """
+        logger.info(f"[EXAM_SERVICE] Generating questions for topic: {request.topic}, grade: {request.grade_level}")
+        
+        # Calculate total questions
+        total_questions = sum(request.questions_per_difficulty.values())
+        
+        if total_questions == 0:
+            raise ValueError("Total questions must be greater than 0")
+        
+        # Format difficulty distribution
+        difficulty_distribution = "\n".join([
+            f"  - {difficulty.capitalize()}: {count} questions"
+            for difficulty, count in request.questions_per_difficulty.items()
+            if count > 0
+        ])
+        
+        # Map subject codes to names
+        subject_map = {
+            "T": "Toán (Mathematics)",
+            "TV": "Tiếng Việt (Vietnamese)",
+            "TA": "Tiếng Anh (English)"
+        }
+        subject_name = subject_map.get(request.subject_code)
+        if not subject_name:
+            raise ValueError(f"Unknown subject code: {request.subject_code}")
+        
+        # Format question types
+        question_types_str = ", ".join(request.question_types)
+        
+        # Format additional requirements
+        additional_req = ""
+        if request.additional_requirements:
+            additional_req = f"\n**Additional Requirements**: {request.additional_requirements}"
+        
+        # Build prompt variables
+        prompt_vars = {
+            "topic": request.topic,
+            "grade_level": request.grade_level,
+            "subject": subject_name,
+            "total_questions": total_questions,
+            "difficulty_distribution": difficulty_distribution,
+            "question_types": question_types_str,
+            "additional_requirements": additional_req
+        }
+        
+        # Render prompts
+        sys_msg = self._system("question.system", prompt_vars)
+        usr_msg = self._system("question.user", prompt_vars)
+        
+        # Execute LLM call
+        logger.info(f"[EXAM_SERVICE] Calling LLM with provider: {request.provider}, model: {request.model}")
+        
+        result, token_usage = self.llm_executor.batch(
+            provider=request.provider or "google",
+            model=request.model or "gemini-2.5-flash",
+            messages=[
+                SystemMessage(content=sys_msg),
+                HumanMessage(content=usr_msg),
+            ],
+        )
+        
+        logger.info(f"[EXAM_SERVICE] LLM call completed. Tokens: input={token_usage.input_tokens}, output={token_usage.output_tokens}")
+        
+        # Parse result
+        try:
+            result_text = self._extract_json(result)
+            questions_data = json.loads(result_text)
+            
+            # Validate is list
+            if not isinstance(questions_data, list):
+                raise ValueError(f"Expected list of questions, got {type(questions_data)}")
+            
+            # Validate count
+            if len(questions_data) != total_questions:
+                logger.warning(
+                    f"[EXAM_SERVICE] Expected {total_questions} questions, got {len(questions_data)}"
+                )
+            
+            # Convert to Question objects with validation
+            questions = []
+            for i, q in enumerate(questions_data):
+                try:
+                    question = Question(**q)
+                    questions.append(question)
+                except Exception as e:
+                    logger.error(f"[EXAM_SERVICE] Failed to parse question {i}: {e}")
+                    logger.error(f"[EXAM_SERVICE] Question data: {q}")
+                    raise ValueError(f"Invalid question format at index {i}: {e}")
+            
+            logger.info(f"[EXAM_SERVICE] Successfully generated {len(questions)} questions")
+            return questions
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"[EXAM_SERVICE] JSON parsing error: {e}")
+            raise ValueError(f"Invalid JSON response from LLM: {e}")
+
