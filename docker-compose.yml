@@ -37,25 +37,23 @@ services:
       start_period: 60s
 
   ai-worker:
-    container_name: ai-worker
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - PYTHON_VERSION=3.11
-    image: ai-worker:latest
-    ports:
-      - "8081:8081"
+    container_name: ai-worker-aiprimary
+    image: ghcr.io/tien4112004/ai-worker:latest
+    expose:
+      - "8081"
+    volumes:
+      # Mount service account key file
+      - /opt/ai-worker/secrets/gcp-service-account.json:/app/secrets/gcp-service-account.json:ro
     environment:
       - APP_NAME=ai-worker
-      - DEFAULT_MODEL=gemini-2.5-flash-lite
-      - LLM_TEMPERATURE=0.7
-      - LLM_MAX_TOKENS=2048
-      - MAX_RETRIES=3
-      - ALLOWED_ORIGINS=http://localhost:8080
-      - ALLOWED_CREDENTIALS=true
-      - ALLOWED_METHODS=*
-      - ALLOWED_HEADERS=*
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-gemini-2.5-flash-lite}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.7}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-2048}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - ALLOWED_CREDENTIALS=${ALLOWED_CREDENTIALS:-true}
+      - ALLOWED_METHODS=${ALLOWED_METHODS:-*}
+      - ALLOWED_HEADERS=${ALLOWED_HEADERS:-*}
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=info
       - DATABASE_URL=${DATABASE_URL}
@@ -64,13 +62,6 @@ services:
       - DATABASE_NAME=${DATABASE_NAME}
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-    env_file:
-      - .env
-    volumes:
-      # Mount app code for development (remove in production)
-      - ./app:/app/app:ro
-      # Mount prompts directory
-      - ./app/prompts:/app/app/prompts:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/docs"]
@@ -79,32 +70,42 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - default
+      - network-aiprimary
     deploy:
       resources:
         limits:
           cpus: "1"
-          memory: 1G
+          memory: 768M
         reservations:
           cpus: "1"
           memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # Optional: Redis for caching (if needed in the future)
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: ai-worker-redis
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   restart: unless-stopped
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 3s
-  #     retries: 3
-  #   networks:
-  #     - ai-worker-network
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: phoenix
+    ports:
+      - "6006:6006"      # Phoenix UI
+      - "4317:4317"      # gRPC collector (OpenTelemetry)
+      - "9090:9090"      # HTTP collector (alternative)
+    environment:
+      # Phoenix configuration
+      - PHOENIX_WORKING_DIR=/phoenix/data
+      - PHOENIX_PORT=6006
+      - PHOENIX_GRPC_PORT=4317
+      
+      # Enable authentication
+      - PHOENIX_ENABLE_AUTH=true
+      - PHOENIX_SECRET=${PHOENIX_SECRET}
+      
+      # PostgreSQL
+      - PHOENIX_SQL_DATABASE_URL=${PHOENIX_SQL_DATABASE_URL}
+    networks:
+      - network-aiprimary
 
 volumes:
   localai_config:
@@ -115,4 +116,4 @@ volumes:
 networks:
   default:
     external: true
-    name: datn-be_default
+    name: network-aiprimary
