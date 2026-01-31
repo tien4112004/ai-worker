@@ -12,7 +12,11 @@ from app.api.router import api
 from app.core.config import settings
 from app.llms.executor import LLMExecutor
 from app.middleware.trace_id import injectCustomTraceId
+from app.llms.tool import agent_tools
 from app.prompts.loader import PromptStore
+from app.repositories.document_embeddings_repository import (
+    DocumentEmbeddingsRepository,
+)
 from app.services.content_service import ContentService
 from app.services.exam_service import ExamService
 
@@ -38,9 +42,18 @@ async def lifespan(app: FastAPI):
         llm_executor=llm_executor, prompt_store=prompt_store
     )
 
+    document_embeddings_repository = DocumentEmbeddingsRepository(
+        pg_connection_string=settings.pg_connection_string,
+        vertex_project_id=settings.project_id,
+        vertex_location=settings.location,
+        service_account_file=settings.service_account_json,
+    )
+    agent_tools.set_global_repository(document_embeddings_repository)
+
     app.state.settings = settings
     app.state.content_service = content_service
     app.state.exam_service = exam_service
+    app.state.document_embeddings_repository = document_embeddings_repository
 
     def init_vertexai():
         """Initialize Vertex AI settings."""

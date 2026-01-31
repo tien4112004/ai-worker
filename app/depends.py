@@ -3,7 +3,6 @@ from typing import Annotated
 from fastapi import Depends, Request
 
 from app.core.config import settings
-from app.llms.executor import LLMExecutor
 from app.services.content_service import ContentService
 from app.services.exam_service import ExamService
 
