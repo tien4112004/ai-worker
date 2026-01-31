@@ -1,0 +1,45 @@
+services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: phoenix
+    ports:
+      - "6006:6006"      # Phoenix UI
+      - "4317:4317"      # gRPC collector (OpenTelemetry)
+      - "9090:9090"      # HTTP collector (alternative)
+    environment:
+      # Phoenix configuration
+      - PHOENIX_WORKING_DIR=/phoenix/data
+      - PHOENIX_PORT=6006
+      - PHOENIX_GRPC_PORT=4317
+      
+      # Enable authentication
+      - PHOENIX_ENABLE_AUTH=true
+      - PHOENIX_SECRET=4e23e673e441e652bc5fb93aa2087750
+      
+      # PostgreSQL for production (instead of SQLite)
+      - PHOENIX_SQL_DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ai-worker-tracesdb
+      
+  # # Postgres For Tracing
+  # tracesdb:
+  #   image: postgres:15-alpine
+  #   container_name: ai-worker-tracesdb
+  #   ports:
+  #     - "5444:5432"
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=ai-worker-tracesdb
+  #   restart: always
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: "1"
+  #         memory: 768M
+  #       reservations:
+  #         cpus: "1"
+  #         memory: 256M
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"

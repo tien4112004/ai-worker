@@ -8,7 +8,6 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
-from app.repositories.llm_result_repository import llm_result_repository
 from app.schemas.image_content import ImageGenerateRequest
 from app.schemas.mindmap_content import MindmapGenerateRequest
 from app.schemas.slide_content import (
@@ -483,3 +482,53 @@ class ContentService:
         self.last_token_usage = mock_usage
 
         return mock_mindmap, mock_usage
+
+    # ============ RAG ============
+    def make_outline_with_rag(self, request: OutlineGenerateRequest):
+        """Generate outline using LLM and save result.
+        Args:
+            request (OutlineGenerateRequest): Request object containing parameters for outline generation.
+        Returns:
+            Dict: A dictionary containing the generated outline.
+        """
+        sys_msg = self._system(
+            "outline.system.rag",
+            None,
+        )
+
+        usr_msg = self._system(
+            "outline.user",
+            request.to_dict(),
+        )
+
+        # Build filters for document search
+        # Note: Use subject_code (e.g., 'TV', 'T', 'TA') instead of subject name
+        filters = {}
+        if request.subject:
+            filters["subject_code"] = request.subject
+        if request.grade:
+            # Convert grade to integer if it's numeric (metadata stores it as int)
+            try:
+                filters["grade"] = int(request.grade)
+            except (ValueError, TypeError):
+                filters["grade"] = request.grade
+
+        print(f"[DEBUG] RAG filters being applied: {filters}")
+        print(
+            f"[DEBUG] Request - subject: {request.subject}, grade: {request.grade} (type: {type(request.grade).__name__})"
+        )
+
+        result, token_usage = self.llm_executor.rag_batch(
+            provider=request.provider,
+            model=request.model,
+            query=usr_msg,
+            system_prompt=sys_msg,
+            return_source_documents=True,
+            filters=filters if filters else None,
+            custom_prompt=None,
+            verbose=False,
+        )
+
+        # Store token usage for later access
+        self.last_token_usage = token_usage
+        return result

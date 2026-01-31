@@ -2,6 +2,9 @@ prompts:
   outline.system:
     path: "outline/sys_prompt.st"
     format: "st"
+  outline.system.rag:
+    path: "outline/sys_prompt_rag.st"
+    format: "st"
   outline.user:
     path: "outline/usr_prompt.st"
     format: "st"
