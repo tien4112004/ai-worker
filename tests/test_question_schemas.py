@@ -65,4 +65,4 @@ def test_provider_defaults():
         question_types=["true_false"]
     )
     assert request.provider == "google"
-    assert request.model == "gemini-2.0-flash-exp"
+    assert request.model == "gemini-2.5-flash-lite"
