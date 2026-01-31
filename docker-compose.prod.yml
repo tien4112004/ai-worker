@@ -33,6 +33,12 @@ services:
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - VERTEX_PROJECT_ID=${VERTEX_PROJECT_ID:-}
       - VERTEX_LOCATION=${VERTEX_LOCATION:-}
+      - PHOENIX_SECRET=${PHOENIX_SECRET}
+      - PHOENIX_SQL_DATABASE_URL=${PHOENIX_SQL_DATABASE_URL}
+      - PHOENIX_PROJECT_NAME=${PHOENIX_PROJECT_NAME}
+      - PHOENIX_COLLECTOR_ENDPOINT=${PHOENIX_COLLECTOR_ENDPOINT}
+      - PHOENIX_API_KEY=${PHOENIX_API_KEY}
+
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/docs"]
@@ -58,7 +64,7 @@ services:
 
   phoenix:
     image: arizephoenix/phoenix:latest
-    container_name: phoenix
+    container_name: aiprimary-phoenix
     ports:
       - "6006:6006"      # Phoenix UI
       - "4317:4317"      # gRPC collector (OpenTelemetry)
