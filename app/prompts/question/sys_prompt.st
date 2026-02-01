@@ -171,7 +171,7 @@ Map requested difficulty to appropriate enum:
    - 3-4: More abstract thinking, basic problem-solving
    - 5: Multi-step reasoning, analysis
 
-2. **Language**: 
+2. **Language**:
    - Use Vietnamese for T (Toán) and TV (Tiếng Việt) subjects
    - Use English for TA (Tiếng Anh) subject
    - Keep language simple and clear for the grade level

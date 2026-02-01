@@ -48,8 +48,10 @@ def generate_exam_matrix(
         )
 
 
-# Question Generation Endpoints 
-@router.post("/exams/generate-questions-from-matrix", response_model=List[Question])
+# Question Generation Endpoints
+@router.post(
+    "/exams/generate-questions-from-matrix", response_model=List[Question]
+)
 def generate_questions(
     request_body: GenerateQuestionsRequest, svc: ExamServiceDep
 ):
@@ -91,4 +93,3 @@ def generate_questions_mock(
     """Generate mock questions for testing without LLM calls."""
     result = svc.generate_questions_mock(request_body)
     return result
-

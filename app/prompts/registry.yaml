@@ -38,4 +38,3 @@ prompts:
   question.user:
     path: "question/usr_prompt.st"
     format: "st"
-

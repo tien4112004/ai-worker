@@ -46,12 +46,15 @@ async def lifespan(app: FastAPI):
     def init_vertexai():
         """Initialize Vertex AI settings."""
         import os
+
         import vertexai
         from google.oauth2 import service_account
 
         # Skip initialization if service account file doesn't exist (for testing/mock mode)
         if not os.path.exists(settings.service_account_json):
-            print(f"Warning: Service account file not found at {settings.service_account_json}")
+            print(
+                f"Warning: Service account file not found at {settings.service_account_json}"
+            )
             print("Vertex AI initialization skipped - using mock mode")
             return
 

@@ -1,7 +1,8 @@
 """Tests for question generation schemas."""
 
 import pytest
-from app.schemas.exam_content import GenerateQuestionsFromTopicRequest, QuestionWithContext
+
+from app.schemas.exam_content import GenerateQuestionsFromTopicRequest
 
 
 def test_valid_request():
@@ -11,7 +12,7 @@ def test_valid_request():
         grade_level="3",
         subject_code="T",
         questions_per_difficulty={"easy": 2, "medium": 1, "hard": 1},
-        question_types=["multiple_choice", "fill_blank"]
+        question_types=["multiple_choice", "fill_blank"],
     )
     assert request.topic == "Phép cộng"
     assert request.grade_level == "3"
@@ -27,7 +28,7 @@ def test_invalid_grade_level():
             grade_level="10",  # Invalid
             subject_code="T",
             questions_per_difficulty={"easy": 1},
-            question_types=["multiple_choice"]
+            question_types=["multiple_choice"],
         )
 
 
@@ -39,7 +40,7 @@ def test_invalid_question_type():
             grade_level="3",
             subject_code="T",
             questions_per_difficulty={"easy": 1},
-            question_types=["essay"]  # Invalid type
+            question_types=["essay"],  # Invalid type
         )
 
 
@@ -50,7 +51,7 @@ def test_optional_additional_requirements():
         grade_level="2",
         subject_code="TV",
         questions_per_difficulty={"easy": 3},
-        question_types=["multiple_choice"]
+        question_types=["multiple_choice"],
     )
     assert request.additional_requirements is None
 
@@ -62,7 +63,7 @@ def test_provider_defaults():
         grade_level="1",
         subject_code="TA",
         questions_per_difficulty={"easy": 1},
-        question_types=["true_false"]
+        question_types=["true_false"],
     )
     assert request.provider == "google"
     assert request.model == "gemini-2.5-flash-lite"

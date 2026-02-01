@@ -26,7 +26,7 @@ ${question_types}
 ### Distribution Guidelines
 
 1. **Topic Balance**: Distribute questions across topics based on their importance and complexity
-2. **Difficulty Progression**: 
+2. **Difficulty Progression**:
    - Easy: ~40-50% of questions (foundational concepts)
    - Medium: ~30-40% of questions (application and understanding)
    - Hard: ~10-20% of questions (analysis and advanced application)

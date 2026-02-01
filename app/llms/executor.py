@@ -41,7 +41,9 @@ class LLMExecutor:
         adapter = adapter_class(model_name=model)
         return adapter.run(model=model, messages=messages, **params)
 
-    def stream(self, provider: str, model: str, messages, **params) -> Tuple[List[str], TokenUsage]:
+    def stream(
+        self, provider: str, model: str, messages, **params
+    ) -> Tuple[List[str], TokenUsage]:
         adapter_class = self._adapter(provider)
         adapter = adapter_class(model_name=model)
         return adapter.stream(model=model, messages=messages, **params)

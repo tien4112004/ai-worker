@@ -36,9 +36,11 @@ class GeminiAdapter:
 
         return content, usage
 
-    def stream(self, model: str, messages: List[BaseMessage], **params) -> Tuple[List[str], TokenUsage]:
+    def stream(
+        self, model: str, messages: List[BaseMessage], **params
+    ) -> Tuple[List[str], TokenUsage]:
         """Stream response and collect token usage.
-        
+
         Returns a tuple of (chunks, token_usage) where chunks is a list of content chunks.
         """
         chunks = []
@@ -46,14 +48,18 @@ class GeminiAdapter:
         total_output_tokens = 0
 
         resp_stream = self.client.stream(input=messages, **params)
-        
+
         for chunk in resp_stream:
             if chunk.content:
                 chunks.append(chunk.content)
             # Sum token usage from each chunk
             if hasattr(chunk, "usage_metadata") and chunk.usage_metadata:
-                total_input_tokens += chunk.usage_metadata.get("input_tokens", 0)
-                total_output_tokens += chunk.usage_metadata.get("output_tokens", 0)
+                total_input_tokens += chunk.usage_metadata.get(
+                    "input_tokens", 0
+                )
+                total_output_tokens += chunk.usage_metadata.get(
+                    "output_tokens", 0
+                )
 
         total = total_input_tokens + total_output_tokens
         usage = TokenUsage(
