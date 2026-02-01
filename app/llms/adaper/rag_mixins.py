@@ -88,60 +88,69 @@ class RAGAdapterMixin:
             # Always clear filters after execution to avoid leaking to next request
             clear_search_filters()
 
-    #     def stream_rag(
-    #         self,
-    #         query: str,
-    #         retriever: BaseRetriever,
-    #         verbose: bool = False,
-    #         **kwargs,
-    #     ) -> Iterator[str]:
-    #         """
-    #         Stream RAG pipeline responses (Stuff Strategy).
+    def stream_rag(
+        self,
+        query: str,
+        system_prompt: str,
+        filters: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Iterator:
+        """
+        Stream RAG pipeline responses using tool-calling agent.
 
-    #         Args:
-    #             query: User query
-    #             retriever: Vector store retriever
-    #             verbose: Enable verbose logging
-    #             **kwargs: Additional parameters
+        Yields str content chunks as the LLM generates them, then
+        yields a single TokenUsage object as the final item.
 
-    #         Yields:
-    #             Response chunks
-    #         """
-    #         if not hasattr(self, "client"):
-    #             raise ValueError("Adapter must have 'client' attribute to use RAGMixin")
+        Args:
+            query: User query
+            system_prompt: System prompt for the agent
+            filters: Optional filters for document search
 
-    #         llm = self.client
+        Yields:
+            str chunks of the LLM response, followed by a TokenUsage
+        """
+        from langchain_core.messages import AIMessageChunk, HumanMessage
 
-    #         # Get relevant documents explicitly to construct context for streaming manually
-    #         # (create_retrieval_chain streaming logic can be complex to parse if we want just content)
-    #         # However, we can simpler rely on manual stuff streaming logic similar to before
+        from app.llms.tool.agent_tools import (
+            clear_search_filters,
+            set_search_filters,
+        )
 
-    #         docs = retriever.invoke(query)
+        if not hasattr(self, "client"):
+            raise ValueError(
+                "Adapter must have 'client' attribute to use RAGMixin"
+            )
 
-    #         if not docs:
-    #             yield "No relevant documents found."
-    #             return
+        try:
+            if filters:
+                set_search_filters(filters)
+                print(f"[DEBUG] RAG stream filters set: {filters}")
 
-    #         # Stuff Logic (Streaming)
-    #         context = "\n\n".join([doc.page_content for doc in docs])
-    #         prompt = f"""Use the following context to answer the question. If you cannot answer based on the context, say so.
+            agent = create_tool_calling_executor(
+                self.client,
+                tools,
+                prompt=system_prompt,
+            )
 
-    # Context:
-    # {context}
+            last_ai_chunk = None
+            for chunk, metadata in agent.stream(
+                {"messages": [HumanMessage(content=query)]},
+                stream_mode="messages",
+            ):
+                if not isinstance(chunk, AIMessageChunk):
+                    continue
+                # Skip tool-use chunks (agent calling search_documents)
+                if chunk.tool_calls:
+                    continue
+                if chunk.content and isinstance(chunk.content, str):
+                    last_ai_chunk = chunk
+                    yield chunk.content
 
-    # Question: {query}
+            # Yield token usage as the final item
+            yield self._extract_token_usage(last_ai_chunk)
 
-    # Answer:"""
-
-    #         if hasattr(llm, "stream"):
-    #             for chunk in llm.stream(prompt):
-    #                  if hasattr(chunk, "content"):
-    #                     yield chunk.content
-    #                  else:
-    #                     yield str(chunk)
-    #         else:
-    #              response = llm.invoke(prompt)
-    #              yield response.content if hasattr(response, "content") else str(response)
+        finally:
+            clear_search_filters()
 
     def _format_source_documents(
         self, source_documents: List[Any]

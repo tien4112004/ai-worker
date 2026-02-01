@@ -113,17 +113,10 @@ def generate_outline_rag_stream(
     svc: ContentRagServiceDep,
 ):
     try:
-        chunks, token_usage = svc.make_outline_rag_stream(
-            outlineGenerateRequest
-        )
+        chunks = svc.make_outline_rag_stream(outlineGenerateRequest)
     except ContentMismatchError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    logger.info(
-        f"[OUTLINE/RAG/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
-    )
-    return EventSourceResponse(
-        sse_word_by_word(request, chunks, token_usage), ping=None
-    )
+    return EventSourceResponse(sse_word_by_word(request, chunks), ping=None)
 
 
 @router.post("/presentations/generate/stream")
@@ -133,17 +126,10 @@ def generate_presentation_rag_stream(
     svc: ContentRagServiceDep,
 ):
     try:
-        chunks, token_usage = svc.make_presentation_rag_stream(
-            presentationGenerateRequest
-        )
+        chunks = svc.make_presentation_rag_stream(presentationGenerateRequest)
     except ContentMismatchError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    logger.info(
-        f"[PRESENTATIONS/RAG/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
-    )
-    return EventSourceResponse(
-        sse_json_by_json(request, chunks, token_usage), ping=None
-    )
+    return EventSourceResponse(sse_json_by_json(request, chunks), ping=None)
 
 
 @router.post("/mindmap/generate/stream")
@@ -153,14 +139,7 @@ def generate_mindmap_rag_stream(
     svc: ContentRagServiceDep,
 ):
     try:
-        chunks, token_usage = svc.generate_mindmap_rag_stream(
-            mindmapGenerateRequest
-        )
+        chunks = svc.generate_mindmap_rag_stream(mindmapGenerateRequest)
     except ContentMismatchError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    logger.info(
-        f"[MINDMAP/RAG/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
-    )
-    return EventSourceResponse(
-        sse_word_by_word(request, chunks, token_usage), ping=None
-    )
+    return EventSourceResponse(sse_word_by_word(request, chunks), ping=None)

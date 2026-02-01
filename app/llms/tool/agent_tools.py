@@ -71,19 +71,22 @@ def search_documents(query: str, k: int = 10) -> str:
         f"[DEBUG] search_documents called with query: {query}, k: {k}, filters: {filter_dict}"
     )
 
-    # Perform similarity search with filters
+    # Perform similarity search with filters, falling back to unfiltered if empty
     docs = document_embeddings_repository.similarity_search(
         query=query, k=k, filter=filter_dict if filter_dict else None
     )
 
+    if not docs and filter_dict:
+        print(
+            "[DEBUG] Filtered search returned empty, retrying without filters"
+        )
+        docs = document_embeddings_repository.similarity_search(
+            query=query, k=k, filter=None
+        )
+
     # Format documents as a readable string
     if not docs:
-        filter_info = ""
-        if filter_dict:
-            filter_info = f" with filters: {filter_dict}"
-        return (
-            f"No relevant documents found in the knowledge base{filter_info}."
-        )
+        return "No relevant documents found in the knowledge base."
 
     result = []
     for i, doc in enumerate(docs, 1):
@@ -137,19 +140,22 @@ def search_documents_with_score(query: str, k: int = 10) -> str:
         f"[DEBUG] search_documents_with_score called with query: {query}, k: {k}, filters: {filter_dict}"
     )
 
-    # Perform similarity search with filters
+    # Perform similarity search with filters, falling back to unfiltered if empty
     docs = document_embeddings_repository.similarity_search_with_score(
         query=query, k=k, filter=filter_dict if filter_dict else None
     )
 
+    if not docs and filter_dict:
+        print(
+            "[DEBUG] Filtered search returned empty, retrying without filters"
+        )
+        docs = document_embeddings_repository.similarity_search_with_score(
+            query=query, k=k, filter=None
+        )
+
     # Format documents as a readable string
     if not docs:
-        filter_info = ""
-        if filter_dict:
-            filter_info = f" with filters: {filter_dict}"
-        return (
-            f"No relevant documents found in the knowledge base{filter_info}."
-        )
+        return "No relevant documents found in the knowledge base."
 
     result = []
     for i, (doc, score) in enumerate(docs, 1):

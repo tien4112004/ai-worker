@@ -129,17 +129,101 @@ class ContentRagService:
         self._check_content_mismatch(result)
         return result
 
+    def _checked_rag_stream(
+        self,
+        provider: str,
+        model: str,
+        query: str,
+        system_prompt: str,
+        filters,
+    ) -> Generator:
+        """Start a RAG stream with eager CONTENT_MISMATCH detection.
+
+        Prefetches enough of the stream to check for CONTENT_MISMATCH before
+        any chunks are yielded, so the caller can still raise an HTTP 400
+        before the SSE response begins.  Returns a generator that replays the
+        prefetched chunks then continues with the rest of the stream.
+        """
+        stream = self.llm_executor.rag_stream(
+            provider=provider,
+            model=model,
+            query=query,
+            system_prompt=system_prompt,
+            filters=filters,
+        )
+
+        # Eagerly consume enough to detect CONTENT_MISMATCH
+        buffer = ""
+        prefetch: list = []
+        for item in stream:
+            if isinstance(item, TokenUsage):
+                self.last_token_usage = item
+                prefetch.append(item)
+                break
+            buffer += item
+            prefetch.append(item)
+            if len(buffer) >= 100:
+                break
+
+        if buffer.startswith("CONTENT_MISMATCH:"):
+            raise ContentMismatchError(
+                buffer[len("CONTENT_MISMATCH:") :].strip()
+            )
+
+        def _gen():
+            yield from prefetch
+            for item in stream:
+                if isinstance(item, TokenUsage):
+                    self.last_token_usage = item
+                yield item
+
+        return _gen()
+
     def make_outline_rag_stream(
         self, request: OutlineGenerateRequest
-    ) -> Tuple[List[str], TokenUsage]:
-        result = self.make_outline_with_rag(request)
-        return [result["answer"]], self.last_token_usage
+    ) -> Generator:
+        sys_msg = self._system("outline.system.rag", None)
+        usr_msg = self._system("outline.user", request.to_dict())
+
+        filters = {}
+        if request.subject:
+            filters["subject_code"] = request.subject
+        if request.grade:
+            try:
+                filters["grade"] = int(request.grade)
+            except (ValueError, TypeError):
+                filters["grade"] = request.grade
+
+        return self._checked_rag_stream(
+            request.provider,
+            request.model,
+            usr_msg,
+            sys_msg,
+            filters if filters else None,
+        )
 
     def make_presentation_rag_stream(
         self, request: PresentationGenerateRequest
-    ) -> Tuple[List[str], TokenUsage]:
-        result = self.make_presentation_with_rag(request)
-        return [result["answer"]], self.last_token_usage
+    ) -> Generator:
+        sys_msg = self._system("presentation.system.rag", None)
+        usr_msg = self._system("presentation.user", request.to_dict())
+
+        filters = {}
+        if request.subject:
+            filters["subject_code"] = request.subject
+        if request.grade:
+            try:
+                filters["grade"] = int(request.grade)
+            except (ValueError, TypeError):
+                filters["grade"] = request.grade
+
+        return self._checked_rag_stream(
+            request.provider,
+            request.model,
+            usr_msg,
+            sys_msg,
+            filters if filters else None,
+        )
 
     def generate_mindmap_with_rag(self, request: MindmapGenerateRequest):
         sys_msg = self._system(
@@ -183,6 +267,23 @@ class ContentRagService:
 
     def generate_mindmap_rag_stream(
         self, request: MindmapGenerateRequest
-    ) -> Tuple[List[str], TokenUsage]:
-        result = self.generate_mindmap_with_rag(request)
-        return [result["answer"]], self.last_token_usage
+    ) -> Generator:
+        sys_msg = self._system("mindmap.system.rag", request.to_dict())
+        usr_msg = self._system("mindmap.user", request.to_dict())
+
+        filters = {}
+        if request.subject:
+            filters["subject_code"] = request.subject
+        if request.grade:
+            try:
+                filters["grade"] = int(request.grade)
+            except (ValueError, TypeError):
+                filters["grade"] = request.grade
+
+        return self._checked_rag_stream(
+            request.provider,
+            request.model,
+            usr_msg,
+            sys_msg,
+            filters if filters else None,
+        )

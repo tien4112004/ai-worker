@@ -78,8 +78,8 @@ class LLMExecutor:
         provider: str,
         model: str,
         query: str,
-        retriever: Any,
-        strategy: str = "stuff",
+        system_prompt: str,
+        filters: Any = None,
         **params,
     ) -> Any:
         adapter_class = self._text_adapter(provider)
@@ -92,8 +92,8 @@ class LLMExecutor:
 
         return adapter.stream_rag(
             query=query,
-            retriever=retriever,
-            strategy=strategy,
+            system_prompt=system_prompt,
+            filters=filters,
             **params,
         )
 
