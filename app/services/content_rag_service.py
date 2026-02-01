@@ -79,7 +79,7 @@ class ContentRagService:
         # Store token usage for later access
         self.last_token_usage = token_usage
         self._check_content_mismatch(result)
-        return result
+        return result["answer"]
 
     def make_presentation_with_rag(self, request: PresentationGenerateRequest):
         sys_msg = self._system(
@@ -119,7 +119,7 @@ class ContentRagService:
 
         self.last_token_usage = token_usage
         self._check_content_mismatch(result)
-        return result
+        return result["answer"]
 
     def _checked_rag_stream(
         self,
@@ -255,7 +255,7 @@ class ContentRagService:
 
         self.last_token_usage = token_usage
         self._check_content_mismatch(result)
-        return result
+        return result["answer"]
 
     def generate_mindmap_rag_stream(
         self, request: MindmapGenerateRequest
