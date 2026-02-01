@@ -38,3 +38,9 @@ prompts:
   question.user:
     path: "question/usr_prompt.st"
     format: "st"
+  question.context.system:
+    path: "question/sys_prompt_context.st"
+    format: "st"
+  question.context.user:
+    path: "question/usr_prompt_context.st"
+    format: "st"

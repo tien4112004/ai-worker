@@ -360,7 +360,9 @@ class Question(BaseModel):
     explanation: Optional[str] = None
     grade: Literal["K", "1", "2", "3", "4", "5"]
     chapter: str = Field(..., description="Topic/chapter name")
-    subject: str = Field(..., description="Subject code: T, TV, TA")
+    subject: Literal["T", "TV", "TA"] = Field(
+        ..., description="Subject code: T, TV, TA"
+    )
     data: Union[
         MultipleChoiceData, FillInBlankData, MatchingData, OpenEndedData
     ]
@@ -413,9 +415,54 @@ class GenerateQuestionsFromTopicRequest(BaseModel):
     grade_level: Literal["K", "1", "2", "3", "4", "5"]
     subject_code: str = Field(..., description="Subject code: T, TV, TA")
 
-    questions_per_difficulty: Dict[Literal["EASY", "MEDIUM", "HARD"], int] = (
-        Field(..., description="Number of questions for each difficulty level")
+    questions_per_difficulty: Dict[
+        Literal[
+            "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
+        ],
+        int,
+    ] = Field(..., description="Number of questions for each difficulty level")
+
+    question_types: List[
+        Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
+    ] = Field(..., description="Types of questions to generate")
+
+    additional_requirements: Optional[str] = Field(
+        None,
+        description="Additional requirements or context for question generation",
     )
+
+    # LLM configuration
+    provider: Optional[str] = Field(
+        default="google", description="LLM provider"
+    )
+    model: Optional[str] = Field(
+        default="gemini-2.5-flash", description="LLM model"
+    )
+
+
+class GenerateQuestionsFromContextRequest(BaseModel):
+    """Request to generate questions from a context (text/image)."""
+
+    context: str = Field(
+        ..., description="The context content (text passage or base64 image)"
+    )
+    context_type: Literal["TEXT", "IMAGE"] = Field(
+        ..., description="Type of context provided"
+    )
+
+    # Metadata and objectives
+    objectives: List[str] = Field(
+        ..., description="Learning objectives or goals for the questions"
+    )
+    grade_level: Literal["K", "1", "2", "3", "4", "5"]
+    subject_code: str = Field(..., description="Subject code: T, TV, TA")
+
+    questions_per_difficulty: Dict[
+        Literal[
+            "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
+        ],
+        int,
+    ] = Field(..., description="Number of questions for each difficulty level")
 
     question_types: List[
         Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]

@@ -15,6 +15,7 @@ from app.schemas.exam_content import (
     DimensionTopic,
     ExamMatrix,
     GenerateMatrixRequest,
+    GenerateQuestionsFromContextRequest,
     GenerateQuestionsFromTopicRequest,
     GenerateQuestionsRequest,
     GenerationProgress,
@@ -517,6 +518,159 @@ class ExamService:
                 SystemMessage(content=sys_msg),
                 HumanMessage(content=usr_msg),
             ],
+        )
+
+        logger.info(
+            f"[EXAM_SERVICE] LLM call completed. Tokens: input={token_usage.input_tokens}, output={token_usage.output_tokens}"
+        )
+
+        # Parse result
+        try:
+            result_text = self._extract_json(result)
+            questions_data = json.loads(result_text)
+
+            # Validate is list
+            if not isinstance(questions_data, list):
+                raise ValueError(
+                    f"Expected list of questions, got {type(questions_data)}"
+                )
+
+            # Validate count
+            if len(questions_data) != total_questions:
+                logger.warning(
+                    f"[EXAM_SERVICE] Expected {total_questions} questions, got {len(questions_data)}"
+                )
+
+            # Convert to Question objects with validation
+            questions = []
+            for i, q in enumerate(questions_data):
+                try:
+                    question = Question(**q)
+                    questions.append(question)
+                except Exception as e:
+                    logger.error(
+                        f"[EXAM_SERVICE] Failed to parse question {i}: {e}"
+                    )
+                    logger.error(f"[EXAM_SERVICE] Question data: {q}")
+                    raise ValueError(
+                        f"Invalid question format at index {i}: {e}"
+                    )
+
+            logger.info(
+                f"[EXAM_SERVICE] Successfully generated {len(questions)} questions"
+            )
+            return questions
+
+        except json.JSONDecodeError as e:
+            logger.error(f"[EXAM_SERVICE] JSON parsing error: {e}")
+            raise ValueError(f"Invalid JSON response from LLM: {e}")
+
+    def generate_questions_from_context(
+        self, request: GenerateQuestionsFromContextRequest
+    ) -> List[Question]:
+        """
+        Generate questions based on context (image/text) and requirements.
+
+        Args:
+            request: Request containing context, topic, grade, subject, and requirements
+
+        Returns:
+            List of generated Question objects
+        """
+        logger.info(
+            f"[EXAM_SERVICE] Generating questions from context for grade: {request.grade_level}"
+        )
+
+        # Calculate total questions
+        total_questions = sum(request.questions_per_difficulty.values())
+
+        if total_questions == 0:
+            raise ValueError("Total questions must be greater than 0")
+
+        # Format difficulty distribution
+        difficulty_distribution = "\n".join(
+            [
+                f"  - {difficulty.upper()}: {count} questions"
+                for difficulty, count in request.questions_per_difficulty.items()
+                if count > 0
+            ]
+        )
+
+        # Map subject codes to names
+        subject_map = {
+            "T": "Toán (Mathematics)",
+            "TV": "Tiếng Việt (Vietnamese)",
+            "TA": "Tiếng Anh (English)",
+        }
+        subject_name = subject_map.get(request.subject_code)
+        if not subject_name:
+            raise ValueError(f"Unknown subject code: {request.subject_code}")
+
+        # Format question types
+        question_types_str = ", ".join(request.question_types)
+
+        # Format objectives
+        objectives_str = "\n".join([f"- {obj}" for obj in request.objectives])
+
+        # Format additional requirements
+        additional_req = ""
+        if request.additional_requirements:
+            additional_req = f"\n**Additional Requirements**: {request.additional_requirements}"
+
+        # Build prompt variables
+        prompt_vars = {
+            "context_type": request.context_type,
+            "objectives": objectives_str,
+            "grade_level": request.grade_level,
+            "subject": subject_name,
+            "total_questions": total_questions,
+            "difficulty_distribution": difficulty_distribution,
+            "question_types": question_types_str,
+            "additional_requirements": additional_req,
+        }
+
+        # Render prompt text
+        sys_msg_content = self._system("question.context.system", prompt_vars)
+        usr_msg_content = self._system("question.context.user", prompt_vars)
+
+        messages = [SystemMessage(content=sys_msg_content)]
+
+        if request.context_type == "IMAGE":
+            # For image, we need to construct a multipart message
+            # Clean base64 string if needed
+            image_data = request.context
+            if "," in image_data:
+                image_data = image_data.split(",")[1]
+
+            messages.append(
+                HumanMessage(
+                    content=[
+                        {"type": "text", "text": usr_msg_content},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_data}"
+                            },
+                        },
+                    ]
+                )
+            )
+        else:
+            # For text, append context to user message
+            full_usr_msg = (
+                f"{usr_msg_content}\n\n**Context**:\n{request.context}"
+            )
+            messages.append(HumanMessage(content=full_usr_msg))
+
+        # Execute LLM call
+        logger.info(
+            f"[EXAM_SERVICE] Calling LLM with provider: {request.provider}, model: {request.model}"
+        )
+
+        result, token_usage = self.llm_executor.batch(
+            provider=request.provider or "google",
+            model=request.model or "gemini-2.5-flash",
+            messages=messages,
         )
 
         logger.info(
