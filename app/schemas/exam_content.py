@@ -17,7 +17,7 @@ class Topic(BaseModel):
 class MatrixContent(BaseModel):
     """Represents a content cell in the exam matrix."""
     
-    difficulty: Literal["easy", "medium", "hard"] = Field(
+    difficulty: Literal["knowledge", "comprehension", "application"] = Field(
         ..., description="Difficulty level"
     )
     numberOfQuestions: int = Field(..., ge=1, description="Number of questions for this difficulty", alias="number_of_questions")
@@ -67,7 +67,7 @@ class MatrixDimensions(BaseModel):
     
     topics: List[DimensionTopic] = Field(..., description="List of topics (first dimension)")
     difficulties: List[str] = Field(
-        default=["easy", "medium", "hard"],
+        default=["knowledge", "comprehension", "application"],
         description="List of difficulty levels (second dimension)"
     )
     questionTypes: List[str] = Field(
@@ -85,6 +85,8 @@ class MatrixMetadata(BaseModel):
     
     id: str = Field(..., description="Unique identifier for this matrix")
     name: str = Field(..., description="Matrix name")
+    grade: Optional[str] = Field(None, description="Grade level (e.g., '1', '2', '3', '4', '5')")
+    subjectCode: Optional[str] = Field(None, description="Subject code (T, TV, TA)", alias="subject_code")
     createdAt: Optional[str] = Field(None, description="ISO timestamp of creation", alias="created_at")
     
     class Config:
@@ -140,10 +142,11 @@ class GenerateMatrixRequest(BaseModel):
     name: str = Field(..., description="Name for the exam matrix")
     topics: List[str] = Field(..., min_length=1, description="List of topic names to include")
     gradeLevel: str = Field(..., description="Grade level", alias="grade_level")
+    subjectCode: str = Field(..., description="Subject code (T, TV, TA)", alias="subject_code")
     totalQuestions: int = Field(..., ge=1, description="Target total number of questions", alias="total_questions")
     totalPoints: int = Field(..., ge=1, description="Target total points", alias="total_points")
     difficulties: Optional[List[str]] = Field(
-        default=["easy", "medium", "hard"],
+        default=["knowledge", "comprehension", "application"],
         description="Difficulty levels to include"
     )
     questionTypes: Optional[List[str]] = Field(
@@ -169,6 +172,7 @@ class GenerateMatrixRequest(BaseModel):
             "topics": ", ".join(self.topics),
             "topics_list": self.topics,
             "grade_level": self.gradeLevel,
+            "subject_code": self.subjectCode,
             "total_questions": self.totalQuestions,
             "total_points": self.totalPoints,
             "difficulties": ", ".join(self.difficulties) if self.difficulties else "easy, medium, hard",
@@ -186,7 +190,7 @@ class MatrixItem(BaseModel):
     ] = Field(..., description="Type of question")
     count: int = Field(..., ge=1, description="Number of questions to generate")
     points_each: int = Field(..., ge=1, description="Points for each question")
-    difficulty: Literal["easy", "medium", "hard"] = Field(
+    difficulty: Literal["knowledge", "comprehension", "application"] = Field(
         ..., description="Difficulty level"
     )
     requires_context: bool = Field(
@@ -281,7 +285,7 @@ class Question(BaseModel):
     """Question entity matching backend Question class."""
     
     type: Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
-    difficulty: Literal["KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"]
+    difficulty: Literal["knowledge", "comprehension", "application", "advanced_application"]
     title: str = Field(..., description="Question text/prompt")
     titleImageUrl: Optional[str] = Field(None, alias="title_image_url")
     explanation: Optional[str] = None

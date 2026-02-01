@@ -58,7 +58,7 @@ class ExamService:
         """
         # Prepare prompt variables
         prompt_vars = request.to_dict()
-        prompt_vars["difficulties"] = request.difficulties or ["easy", "medium", "hard"]
+        prompt_vars["difficulties"] = request.difficulties or ["knowledge", "comprehension", "application"]
         prompt_vars["question_types"] = request.questionTypes or [
             "multiple_choice", "fill_in_blank", "true_false", "matching"
         ]
@@ -83,6 +83,8 @@ class ExamService:
             metadata = MatrixMetadata(
                 id=matrix_data.get("metadata", {}).get("id", str(uuid.uuid4())),
                 name=matrix_data.get("metadata", {}).get("name", request.name),
+                grade=request.gradeLevel,
+                subject_code=request.subjectCode,
                 created_at=matrix_data.get("metadata", {}).get("createdAt", datetime.utcnow().isoformat())
             )
             
@@ -327,7 +329,7 @@ class ExamService:
             DimensionTopic(id=str(uuid.uuid4()), name=t)
             for t in request.topics
         ]
-        difficulties = request.difficulties or ["easy", "medium", "hard"]
+        difficulties = request.difficulties or ["knowledge", "comprehension", "application"]
         question_types = request.questionTypes or ["multiple_choice", "fill_in_blank", "true_false", "matching"]
         
         # Build mock matrix with distributed questions
