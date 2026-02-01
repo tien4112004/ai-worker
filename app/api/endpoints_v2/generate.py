@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
@@ -15,6 +15,7 @@ from app.schemas.slide_content import (
     PresentationGenerateRequest,
 )
 from app.schemas.token_usage import TokenUsage
+from app.services.content_rag_service import ContentMismatchError
 from app.utils.server_sent_event import sse_json_by_json, sse_word_by_word
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,10 @@ router = APIRouter(tags=["generate"])
 def generate_outline_with_rag(
     outlineGenerateRequest: OutlineGenerateRequest, svc: ContentRagServiceDep
 ):
-    result = svc.make_outline_with_rag(outlineGenerateRequest)
+    try:
+        result = svc.make_outline_with_rag(outlineGenerateRequest)
+    except ContentMismatchError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     token_usage = svc.last_token_usage
     logger.info(
         f"[OUTLINE/RAG/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
@@ -76,7 +80,10 @@ def generate_presentation_with_rag(
     presentationGenerateRequest: PresentationGenerateRequest,
     svc: ContentRagServiceDep,
 ):
-    result = svc.make_presentation_with_rag(presentationGenerateRequest)
+    try:
+        result = svc.make_presentation_with_rag(presentationGenerateRequest)
+    except ContentMismatchError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     token_usage = svc.last_token_usage
     logger.info(
         f"[PRESENTATIONS/RAG/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
@@ -88,7 +95,10 @@ def generate_presentation_with_rag(
 def generate_mindmap_with_rag(
     mindmapGenerateRequest: MindmapGenerateRequest, svc: ContentRagServiceDep
 ):
-    result = svc.generate_mindmap_with_rag(mindmapGenerateRequest)
+    try:
+        result = svc.generate_mindmap_with_rag(mindmapGenerateRequest)
+    except ContentMismatchError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     token_usage = svc.last_token_usage
     logger.info(
         f"[MINDMAP/RAG/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
@@ -102,7 +112,12 @@ def generate_outline_rag_stream(
     outlineGenerateRequest: OutlineGenerateRequest,
     svc: ContentRagServiceDep,
 ):
-    chunks, token_usage = svc.make_outline_rag_stream(outlineGenerateRequest)
+    try:
+        chunks, token_usage = svc.make_outline_rag_stream(
+            outlineGenerateRequest
+        )
+    except ContentMismatchError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     logger.info(
         f"[OUTLINE/RAG/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
     )
@@ -117,9 +132,12 @@ def generate_presentation_rag_stream(
     presentationGenerateRequest: PresentationGenerateRequest,
     svc: ContentRagServiceDep,
 ):
-    chunks, token_usage = svc.make_presentation_rag_stream(
-        presentationGenerateRequest
-    )
+    try:
+        chunks, token_usage = svc.make_presentation_rag_stream(
+            presentationGenerateRequest
+        )
+    except ContentMismatchError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     logger.info(
         f"[PRESENTATIONS/RAG/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
     )
@@ -134,9 +152,12 @@ def generate_mindmap_rag_stream(
     mindmapGenerateRequest: MindmapGenerateRequest,
     svc: ContentRagServiceDep,
 ):
-    chunks, token_usage = svc.generate_mindmap_rag_stream(
-        mindmapGenerateRequest
-    )
+    try:
+        chunks, token_usage = svc.generate_mindmap_rag_stream(
+            mindmapGenerateRequest
+        )
+    except ContentMismatchError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     logger.info(
         f"[MINDMAP/RAG/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
     )

@@ -17,6 +17,12 @@ from app.schemas.slide_content import (
 from app.schemas.token_usage import TokenUsage
 
 
+class ContentMismatchError(Exception):
+    """Raised when retrieved documents do not match the requested topic/subject/grade."""
+
+    pass
+
+
 class ContentRagService:
     def __init__(self, llm_executor: LLMExecutor, prompt_store: PromptStore):
         self.llm_executor = llm_executor or LLMExecutor()
@@ -25,6 +31,13 @@ class ContentRagService:
 
     def _system(self, key: str, vars: Dict[str, Any] | None) -> str:
         return self.prompt_store.render(key, vars)
+
+    @staticmethod
+    def _check_content_mismatch(result: dict) -> None:
+        answer = result.get("answer", "").strip()
+        if answer.startswith("CONTENT_MISMATCH:"):
+            message = answer[len("CONTENT_MISMATCH:") :].strip()
+            raise ContentMismatchError(message)
 
     def make_outline_with_rag(self, request: OutlineGenerateRequest):
         """Generate outline using LLM and save result.
@@ -73,6 +86,7 @@ class ContentRagService:
 
         # Store token usage for later access
         self.last_token_usage = token_usage
+        self._check_content_mismatch(result)
         return result
 
     def make_presentation_with_rag(self, request: PresentationGenerateRequest):
@@ -112,6 +126,7 @@ class ContentRagService:
         )
 
         self.last_token_usage = token_usage
+        self._check_content_mismatch(result)
         return result
 
     def make_outline_rag_stream(
@@ -163,6 +178,7 @@ class ContentRagService:
         )
 
         self.last_token_usage = token_usage
+        self._check_content_mismatch(result)
         return result
 
     def generate_mindmap_rag_stream(

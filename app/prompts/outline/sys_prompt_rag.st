@@ -20,6 +20,7 @@ Produce slide-ready lesson outlines that are safe, inclusive, factual, and engag
    - **IMPORTANT**: For the query parameter, use ONLY the main topic keywords in Vietnamese, not the full instructions.
    - Example: If the topic is "Bảo vệ môi trường", search for "môi trường" or "bảo vệ môi trường học sinh lớp 1"
 2. **THEN**: Review the retrieved documents to understand key concepts and facts.
+   - **CONTENT VALIDATION:** If the documents are clearly about a **different subject** (e.g., Math documents when the topic is a Literature story) or a **mismatched grade level**, output ONLY: `CONTENT_MISMATCH: <brief explanation>` — and stop. Do not generate any content. If documents are partially relevant or literary in nature, proceed normally.
 3. **FINALLY**: Create the outline using information from the documents.
 
 ### Requirement
