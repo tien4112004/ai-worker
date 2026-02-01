@@ -2,10 +2,9 @@
 
 from typing import Any, Dict, List, Optional
 
+from langchain_community.vectorstores import PGVector
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_postgres import PGVector
-from langchain_postgres.vectorstores import PGVector as PGVectorStore
 
 
 class VectorStoreManager:
@@ -38,18 +37,17 @@ class VectorStoreManager:
         self.embeddings = embeddings
         self.collection_name = collection_name
 
-        # Build connection string if not provided
         if connection_string:
             self.connection_string = connection_string
         else:
-            if not password:
-                raise ValueError("PostgreSQL password is required")
-            self.connection_string = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+            self.connection_string = (
+                f"postgresql://{user}:{password}@{host}:{port}/{database}"
+            )
 
         # Initialize the vector store
         self.vector_store = self._initialize_store()
 
-    def _initialize_store(self) -> PGVectorStore:
+    def _initialize_store(self) -> PGVector:
         """
         Initialize or connect to PostgreSQL with pgvector.
 
@@ -57,9 +55,9 @@ class VectorStoreManager:
             PGVector vector store instance
         """
         return PGVector(
-            embeddings=self.embeddings,
+            embedding_function=self.embeddings,
             collection_name=self.collection_name,
-            connection=self.connection_string,
+            connection_string=self.connection_string,
             use_jsonb=True,  # Store metadata as JSONB for better querying
         )
 
@@ -198,7 +196,10 @@ class VectorStoreManager:
             # Execute a query to count documents
             import psycopg2
 
-            conn = psycopg2.connect(self.connection_string)
+            psycopg2_url = self.connection_string.replace(
+                "postgresql+psycopg2://", "postgresql://"
+            )
+            conn = psycopg2.connect(psycopg2_url)
             cursor = conn.cursor()
 
             # Count total documents in the table
@@ -247,7 +248,10 @@ class VectorStoreManager:
         import psycopg2
 
         try:
-            conn = psycopg2.connect(connection_string)
+            psycopg2_url = connection_string.replace(
+                "postgresql+psycopg2://", "postgresql://"
+            )
+            conn = psycopg2.connect(psycopg2_url)
             conn.autocommit = True
             cursor = conn.cursor()
 
