@@ -59,8 +59,8 @@ Return ONLY a valid JSON object with this exact structure:
       {"id": "topic-1", "name": "Topic Name 1"},
       {"id": "topic-2", "name": "Topic Name 2"}
     ],
-    "difficulties": ["easy", "medium", "hard"],
-    "questionTypes": ["multiple_choice", "fill_in_blank", "true_false", "matching"]
+    "difficulties": ["knowledge", "comprehension", "application", "advanced_application"],
+    "questionTypes": ["multiple_choice", "fill_in_blank", "matching", "open_ended"]
   },
   "matrix": [
     [

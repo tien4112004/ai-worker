@@ -27,7 +27,7 @@ def generate_exam_matrix(
 
     This endpoint creates a structured 3D blueprint for an exam, with dimensions:
     - Topics (first dimension)
-    - Difficulties: easy, medium, hard (second dimension)
+    - Difficulties: knowledge, comprehension, application (second dimension)
     - Question types: multiple_choice, fill_in_blank, etc. (third dimension)
 
     Each cell contains {count, points} representing the number of questions

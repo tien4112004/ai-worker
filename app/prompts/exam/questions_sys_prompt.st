@@ -128,10 +128,10 @@ Return ONLY a valid JSON array. Each item in the array represents questions for 
   } or null,
   "questions": [
     {
-      "question_type": "multiple_choice|true_false|fill_blank|long_answer|matching",
+      "question_type": "multiple_choice|true_false|fill_in_blank|open_ended|matching",
       "topic": "string",
       "grade_level": "K|1|2|3|4|5",
-      "difficulty": "easy|medium|hard",
+      "difficulty": "knowledge|comprehension|application|advanced_application",
       "content": "string",
       "answers": ["array of strings"] or {"left": [], "right": []},
       "correct_answer": string or boolean or [{"left": "string", "right": "string"}],

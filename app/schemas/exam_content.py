@@ -19,9 +19,9 @@ class Topic(BaseModel):
 class MatrixContent(BaseModel):
     """Represents a content cell in the exam matrix."""
 
-    difficulty: Literal["knowledge", "comprehension", "application"] = Field(
-        ..., description="Difficulty level"
-    )
+    difficulty: Literal[
+        "knowledge", "comprehension", "application", "advanced_application"
+    ] = Field(..., description="Difficulty level")
     numberOfQuestions: int = Field(
         ...,
         ge=1,
@@ -81,7 +81,7 @@ class MatrixDimensions(BaseModel):
         description="List of difficulty levels (second dimension)",
     )
     questionTypes: List[str] = Field(
-        default=["multiple_choice", "fill_in_blank", "true_false", "matching"],
+        default=["multiple_choice", "fill_in_blank", "matching", "open_ended"],
         description="List of question types (third dimension)",
         alias="question_types",
     )
@@ -211,12 +211,12 @@ class GenerateMatrixRequest(BaseModel):
             "difficulties": (
                 ", ".join(self.difficulties)
                 if self.difficulties
-                else "easy, medium, hard"
+                else "knowledge, comprehension, application, advanced_application"
             ),
             "question_types": (
                 ", ".join(self.questionTypes)
                 if self.questionTypes
-                else "multiple_choice, fill_in_blank, true_false, matching"
+                else "multiple_choice, fill_in_blank, matching, open_ended"
             ),
             "additional_requirements": self.additionalRequirements or "",
         }
@@ -229,17 +229,17 @@ class MatrixItem(BaseModel):
     question_type: Literal[
         "multiple_choice",
         "true_false",
-        "fill_blank",
-        "long_answer",
+        "fill_in_blank",
+        "open_ended",
         "matching",
     ] = Field(..., description="Type of question")
     count: int = Field(
         ..., ge=1, description="Number of questions to generate"
     )
     points_each: int = Field(..., ge=1, description="Points for each question")
-    difficulty: Literal["knowledge", "comprehension", "application"] = Field(
-        ..., description="Difficulty level"
-    )
+    difficulty: Literal[
+        "knowledge", "comprehension", "application", "advanced_application"
+    ] = Field(..., description="Difficulty level")
     requires_context: bool = Field(
         default=False,
         description="Whether question requires a context/passage",

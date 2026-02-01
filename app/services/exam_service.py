@@ -113,7 +113,8 @@ class ExamService:
             dimensions = MatrixDimensions(
                 topics=topics,
                 difficulties=dims_data.get(
-                    "difficulties", ["easy", "medium", "hard"]
+                    "difficulties",
+                    ["knowledge", "comprehension", "application"],
                 ),
                 question_types=dims_data.get(
                     "questionTypes",
