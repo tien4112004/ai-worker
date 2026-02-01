@@ -35,15 +35,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    networks:
+      - datn-be_default
 
   ai-worker:
-    container_name: ai-worker-aiprimary
-    image: ghcr.io/tien4112004/ai-worker:latest
-    expose:
-      - "8081"
+    container_name: ai-worker
+    image: ai-worker:latest
+    ports:
+      - "8081:8081"
     volumes:
       # Mount service account key file
-      - /opt/ai-worker/secrets/gcp-service-account.json:/app/secrets/gcp-service-account.json:ro
+      - ./service-account.json:/app/secrets/gcp-service-account.json:ro
     environment:
       - APP_NAME=ai-worker
       - DEFAULT_MODEL=${DEFAULT_MODEL:-gemini-2.5-flash-lite}
@@ -79,8 +81,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - network-aiprimary
     deploy:
       resources:
         limits:
@@ -94,6 +94,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      - datn-be_default
 
   phoenix:
     image: arizephoenix/phoenix:latest
@@ -113,17 +115,19 @@ services:
       - PHOENIX_SECRET=${PHOENIX_SECRET}
 
       # PostgreSQL
-      - PHOENIX_SQL_DATABASE_URL=${PHOENIX_SQL_DATABASE_URL}
+      - PHOENIX_SQL_DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ai-worker-tracesdb
     networks:
-      - network-aiprimary
+      - datn-be_default
+    restart: unless-stopped
 
 volumes:
   localai_config:
   localai_models:
   redis_data:
     driver: local
+  postgres_data:
+    driver: local
 
 networks:
-  default:
+  datn-be_default:
     external: true
-    name: network-aiprimary

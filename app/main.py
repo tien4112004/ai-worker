@@ -23,11 +23,11 @@ async def lifespan(app: FastAPI):
     llm_tracer = register(
         project_name=settings.phoenix_project_name,
         endpoint=settings.phoenix_collector_endpoint,
-        auto_instrument=True,
+        auto_instrument=False,  # Disabled to prevent duplicate spans
     )
 
+    # Only instrument LangChain to avoid duplicate spans from both LangChain and underlying GoogleGenAI client
     LangChainInstrumentor().instrument(tracer_provider=llm_tracer)
-    GoogleGenAIInstrumentor().instrument(tracer_provider=llm_tracer)
 
     prompt_store = PromptStore()
     llm_executor = LLMExecutor()
