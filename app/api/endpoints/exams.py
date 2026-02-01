@@ -74,22 +74,3 @@ def generate_questions(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate questions: {str(e)}",
         )
-
-
-# Mock Endpoints for Testing
-@router.post("/exams/generate-matrix/mock", response_model=ExamMatrix)
-def generate_exam_matrix_mock(
-    request_body: GenerateMatrixRequest, svc: ExamServiceDep
-):
-    """Generate a mock exam matrix for testing without LLM calls."""
-    result = svc.generate_matrix_mock(request_body)
-    return result
-
-
-@router.post("/exams/generate-questions/mock", response_model=List[Question])
-def generate_questions_mock(
-    request_body: GenerateQuestionsRequest, svc: ExamServiceDep
-):
-    """Generate mock questions for testing without LLM calls."""
-    result = svc.generate_questions_mock(request_body)
-    return result

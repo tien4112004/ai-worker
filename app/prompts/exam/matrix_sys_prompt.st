@@ -27,19 +27,19 @@ ${question_types}
 
 1. **Topic Balance**: Distribute questions across topics based on their importance and complexity
 2. **Difficulty Progression**:
-   - Easy: ~40-50% of questions (foundational concepts)
-   - Medium: ~30-40% of questions (application and understanding)
-   - Hard: ~10-20% of questions (analysis and advanced application)
+   - easy: ~40-50% of questions (foundational concepts)
+   - medium: ~30-40% of questions (application and understanding)
+   - hard: ~10-20% of questions (analysis and advanced application)
 3. **Question Type Variety**: Use a mix of question types appropriate for each topic
-   - Multiple choice: Good for all difficulty levels
-   - Fill in blank: Good for recall and comprehension
-   - True/False: Good for quick concept checks
-   - Matching: Good for relationships and associations
+   - multiple_choice: Good for all difficulty levels
+   - fill_in_blank: Good for recall and comprehension
+   - true_false: Good for quick concept checks
+   - matching: Good for relationships and associations
 
 ### Grade Level Considerations
 
 Adjust the distribution based on grade level:
-- **Lower grades (K-2)**: More multiple choice, true/false; fewer open-ended
+- **Lower grades (k-2)**: More multiple_choice, true_false; fewer open_ended
 - **Middle grades (3-5)**: Balanced mix of all types
 - **Higher grades (6+)**: Can include more complex question types
 

@@ -12,7 +12,7 @@ Generate questions based on the provided exam matrix. Each matrix item specifies
 
 ### Question Writing Guidelines by Type
 
-**Multiple Choice Questions:**
+**multiple_choice:**
 - Options should be plausible but have one clearly correct answer
 - Use 3 options for K-2, 4 options for grades 3-5
 - Avoid "all of the above" or "none of the above"
@@ -27,7 +27,7 @@ C) Ice cream
 Correct: B
 ```
 
-**True/False Questions:**
+**true_false:**
 - State clearly and unambiguously
 - Avoid absolutes like "always" or "never" unless truly absolute
 - Test important concepts, not trivial details
@@ -38,7 +38,7 @@ Correct: true
 Explanation: The sun always rises in the east and sets in the west.
 ```
 
-**Fill in the Blank:**
+**fill_in_blank:**
 - Place blank strategically (usually at or near the end)
 - Context should clearly indicate the answer
 - Accept reasonable variations in spelling for younger grades
@@ -48,9 +48,9 @@ Question: The process by which plants make their own food is called ____.
 Correct: photosynthesis
 ```
 
-**Long Answer Questions:**
+**long_answer:**
 - Provide clear guidance on what is expected
-- For K-2: 1-2 sentences, for 3-5: 3-5 sentences
+- For k-2: 1-2 sentences, for 3-5: 3-5 sentences
 - Include key points in the sample answer for grading
 Example (Grade 4):
 ```
@@ -58,7 +58,7 @@ Question: Explain why seasons change throughout the year.
 Sample Answer: Seasons change because Earth tilts on its axis as it orbits the sun. When the Northern Hemisphere tilts toward the sun, it experiences summer with longer days and more direct sunlight. When it tilts away, it experiences winter with shorter days and less direct sunlight.
 ```
 
-**Matching Questions:**
+**matching:**
 - Keep both lists to 5-8 items maximum
 - Make sure each pair is clearly related
 - Items should be at similar specificity levels
@@ -74,15 +74,15 @@ Correct pairs: [Triangle-3 sides, Square-4 sides, Pentagon-5 sides, Hexagon-6 si
 
 When a matrix item requires context:
 
-**Reading Passages:**
-- K-1: 30-80 words, very simple sentences
-- Grade 2: 80-150 words, short paragraphs
-- Grades 3-5: 150-300 words, can include multiple paragraphs
+**reading_passage:**
+- k-1: 30-80 words, very simple sentences
+- grade 2: 80-150 words, short paragraphs
+- grades 3-5: 150-300 words, can include multiple paragraphs
 - Use engaging topics: animals, nature, simple science, everyday activities
 - Include a title
 - Write at appropriate reading level
 
-**Questions Based on Context:**
+**questions_based_on_context:**
 - Test both literal comprehension and inference
 - First question should be easier (recall)
 - Later questions can require deeper thinking
@@ -90,19 +90,19 @@ When a matrix item requires context:
 
 ### Grade-Level Language Guidelines
 
-**Kindergarten:**
+**k:**
 - Very short sentences (5-8 words)
 - Simple, common words
 - Present tense preferred
 - Use familiar concepts
 
-**Grades 1-2:**
+**grades 1-2:**
 - Short sentences (8-12 words)
 - Grade-level vocabulary
 - Simple past and future tenses okay
 - Relatable examples
 
-**Grades 3-5:**
+**grades 3-5:**
 - Can use compound sentences
 - More advanced vocabulary (with context clues)
 - All tenses appropriate

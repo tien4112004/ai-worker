@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Any, AsyncGenerator, Dict, List
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
@@ -305,143 +305,6 @@ class ExamService:
     #                 "error": f"Failed to process questions: {str(e)}",
     #             }
 
-    def generate_questions_mock(
-        self, request: GenerateQuestionsRequest
-    ) -> List[Question]:
-        """DEPRECATED: Generate mock questions for testing."""
-        raise NotImplementedError(
-            "Matrix-based question generation is deprecated. "
-            "Use /questions/generate endpoint instead."
-        )
-
-    async def generate_questions_stream_mock(
-        self, request: GenerateQuestionsRequest
-    ) -> AsyncGenerator[Dict[str, Any], None]:
-        """Generate mock question stream for testing."""
-        total = sum(item.count for item in request.matrix)
-
-        yield {
-            "status": "GENERATING",
-            "progress": {
-                "current": 0,
-                "total": total,
-                "message": "Starting...",
-            },
-        }
-
-        yield {
-            "status": "GENERATING",
-            "progress": {
-                "current": total // 2,
-                "total": total,
-                "message": f"Generated {total // 2} questions...",
-            },
-        }
-
-        yield {
-            "status": "COMPLETED",
-            "progress": {
-                "current": total,
-                "total": total,
-                "message": "Completed!",
-            },
-            "questions": [
-                {
-                    "topic": "Basic Addition",
-                    "grade_level": "1",
-                    "difficulty": "easy",
-                    "question": {
-                        "question_type": "multiple_choice",
-                        "content": "What is 2 + 2?",
-                        "answers": ["2", "3", "4", "5"],
-                        "correct_answer": "4",
-                    },
-                    "default_points": 2,
-                }
-            ],
-        }
-
-    def generate_matrix_mock(
-        self, request: GenerateMatrixRequest
-    ) -> ExamMatrix:
-        """Generate a mock exam matrix for testing without LLM."""
-        topics = [
-            DimensionTopic(id=str(uuid.uuid4()), name=t)
-            for t in request.topics
-        ]
-        difficulties = request.difficulties or [
-            "knowledge",
-            "comprehension",
-            "application",
-        ]
-        question_types = request.questionTypes or [
-            "multiple_choice",
-            "fill_in_blank",
-            "true_false",
-            "matching",
-        ]
-
-        # Build mock matrix with distributed questions
-        total_q = request.totalQuestions
-        total_p = request.totalPoints
-
-        # Distribute questions across cells
-        num_topics = len(topics)
-        num_diffs = len(difficulties)
-        num_qtypes = len(question_types)
-        total_cells = num_topics * num_diffs * num_qtypes
-
-        base_count = total_q // total_cells if total_cells > 0 else 0
-        base_points = total_p / total_q if total_q > 0 else 1
-
-        matrix = []
-        remaining_q = total_q
-
-        for t_idx in range(num_topics):
-            topic_rows = []
-            for d_idx in range(num_diffs):
-                diff_cells = []
-                for qt_idx in range(num_qtypes):
-                    # Give more questions to easy/medium, fewer to hard
-                    modifier = (
-                        1.5 if d_idx == 0 else (1.0 if d_idx == 1 else 0.5)
-                    )
-                    count = max(
-                        0, min(remaining_q, int(base_count * modifier))
-                    )
-
-                    # Last cell gets remaining
-                    if (
-                        t_idx == num_topics - 1
-                        and d_idx == num_diffs - 1
-                        and qt_idx == num_qtypes - 1
-                    ):
-                        count = remaining_q
-
-                    points = (
-                        count * base_points * (1 + d_idx * 0.5)
-                    )  # Harder = more points
-                    remaining_q -= count
-
-                    # Use "count:points" string format
-                    diff_cells.append(f"{count}:{round(points, 1)}")
-                topic_rows.append(diff_cells)
-            matrix.append(topic_rows)
-
-        return ExamMatrix(
-            metadata=MatrixMetadata(
-                id=str(uuid.uuid4()),
-                name=request.name,
-                created_at=datetime.utcnow().isoformat(),
-            ),
-            dimensions=MatrixDimensions(
-                topics=topics,
-                difficulties=difficulties,
-                question_types=question_types,
-            ),
-            matrix=matrix,
-        )
-
     def generate_questions_from_topic(
         self, request: GenerateQuestionsFromTopicRequest
     ) -> List[Question]:
@@ -633,7 +496,7 @@ class ExamService:
         sys_msg_content = self._system("question.context.system", prompt_vars)
         usr_msg_content = self._system("question.context.user", prompt_vars)
 
-        messages = [SystemMessage(content=sys_msg_content)]
+        messages = [BaseMessage(content=sys_msg_content)]
 
         if request.context_type == "IMAGE":
             # For image, we need to construct a multipart message
