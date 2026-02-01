@@ -610,3 +610,22 @@ class ContentService:
 
         self.last_token_usage = token_usage
         return result
+
+    # ============ RAG Stream ============
+    def make_outline_rag_stream(
+        self, request: OutlineGenerateRequest
+    ) -> Tuple[List[str], TokenUsage]:
+        result = self.make_outline_with_rag(request)
+        return [result["answer"]], self.last_token_usage
+
+    def make_presentation_rag_stream(
+        self, request: PresentationGenerateRequest
+    ) -> Tuple[List[str], TokenUsage]:
+        result = self.make_presentation_with_rag(request)
+        return [result["answer"]], self.last_token_usage
+
+    def generate_mindmap_rag_stream(
+        self, request: MindmapGenerateRequest
+    ) -> Tuple[List[str], TokenUsage]:
+        result = self.generate_mindmap_with_rag(request)
+        return [result["answer"]], self.last_token_usage

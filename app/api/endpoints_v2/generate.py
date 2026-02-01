@@ -1,8 +1,9 @@
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
+from sse_starlette.sse import EventSourceResponse
 
 from app.core.fastapi_depends import (
     ContentRagServiceDep,
@@ -14,6 +15,7 @@ from app.schemas.slide_content import (
     PresentationGenerateRequest,
 )
 from app.schemas.token_usage import TokenUsage
+from app.utils.server_sent_event import sse_json_by_json, sse_word_by_word
 
 logger = logging.getLogger(__name__)
 
@@ -92,3 +94,52 @@ def generate_mindmap_with_rag(
         f"[MINDMAP/RAG/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
     )
     return GenerateResponse(data=result, token_usage=token_usage)
+
+
+@router.post("/outline/generate/stream")
+def generate_outline_rag_stream(
+    request: Request,
+    outlineGenerateRequest: OutlineGenerateRequest,
+    svc: ContentRagServiceDep,
+):
+    chunks, token_usage = svc.make_outline_rag_stream(outlineGenerateRequest)
+    logger.info(
+        f"[OUTLINE/RAG/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
+    return EventSourceResponse(
+        sse_word_by_word(request, chunks, token_usage), ping=None
+    )
+
+
+@router.post("/presentations/generate/stream")
+def generate_presentation_rag_stream(
+    request: Request,
+    presentationGenerateRequest: PresentationGenerateRequest,
+    svc: ContentRagServiceDep,
+):
+    chunks, token_usage = svc.make_presentation_rag_stream(
+        presentationGenerateRequest
+    )
+    logger.info(
+        f"[PRESENTATIONS/RAG/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
+    return EventSourceResponse(
+        sse_json_by_json(request, chunks, token_usage), ping=None
+    )
+
+
+@router.post("/mindmap/generate/stream")
+def generate_mindmap_rag_stream(
+    request: Request,
+    mindmapGenerateRequest: MindmapGenerateRequest,
+    svc: ContentRagServiceDep,
+):
+    chunks, token_usage = svc.generate_mindmap_rag_stream(
+        mindmapGenerateRequest
+    )
+    logger.info(
+        f"[MINDMAP/RAG/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
+    return EventSourceResponse(
+        sse_word_by_word(request, chunks, token_usage), ping=None
+    )
