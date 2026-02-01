@@ -532,3 +532,81 @@ class ContentService:
         # Store token usage for later access
         self.last_token_usage = token_usage
         return result
+
+    def make_presentation_with_rag(self, request: PresentationGenerateRequest):
+        sys_msg = self._system(
+            "presentation.system.rag",
+            None,
+        )
+
+        usr_msg = self._system(
+            "presentation.user",
+            request.to_dict(),
+        )
+
+        filters = {}
+        if request.subject:
+            filters["subject_code"] = request.subject
+        if request.grade:
+            try:
+                filters["grade"] = int(request.grade)
+            except (ValueError, TypeError):
+                filters["grade"] = request.grade
+
+        print(f"[DEBUG] RAG filters being applied: {filters}")
+        print(
+            f"[DEBUG] Request - subject: {request.subject}, grade: {request.grade} (type: {type(request.grade).__name__})"
+        )
+
+        result, token_usage = self.llm_executor.rag_batch(
+            provider=request.provider,
+            model=request.model,
+            query=usr_msg,
+            system_prompt=sys_msg,
+            return_source_documents=True,
+            filters=filters if filters else None,
+            custom_prompt=None,
+            verbose=False,
+        )
+
+        self.last_token_usage = token_usage
+        return result
+
+    def generate_mindmap_with_rag(self, request: MindmapGenerateRequest):
+        sys_msg = self._system(
+            "mindmap.system.rag",
+            None,
+        )
+
+        usr_msg = self._system(
+            "mindmap.user",
+            request.to_dict(),
+        )
+
+        filters = {}
+        if request.subject:
+            filters["subject_code"] = request.subject
+        if request.grade:
+            try:
+                filters["grade"] = int(request.grade)
+            except (ValueError, TypeError):
+                filters["grade"] = request.grade
+
+        print(f"[DEBUG] RAG filters being applied: {filters}")
+        print(
+            f"[DEBUG] Request - subject: {request.subject}, grade: {request.grade} (type: {type(request.grade).__name__})"
+        )
+
+        result, token_usage = self.llm_executor.rag_batch(
+            provider=request.provider,
+            model=request.model,
+            query=usr_msg,
+            system_prompt=sys_msg,
+            return_source_documents=True,
+            filters=filters if filters else None,
+            custom_prompt=None,
+            verbose=False,
+        )
+
+        self.last_token_usage = token_usage
+        return result

@@ -11,6 +11,9 @@ prompts:
   presentation.system:
     path: "presentation/sys_prompt.st"
     format: "st"
+  presentation.system.rag:
+    path: "presentation/sys_prompt_rag.st"
+    format: "st"
   presentation.user:
     path: "presentation/usr_prompt.st"
     format: "st"
@@ -19,6 +22,9 @@ prompts:
     format: "st"
   mindmap.system:
     path: "mindmap/sys_prompt.st"
+    format: "st"
+  mindmap.system.rag:
+    path: "mindmap/sys_prompt_rag.st"
     format: "st"
   mindmap.user:
     path: "mindmap/usr_prompt.st"

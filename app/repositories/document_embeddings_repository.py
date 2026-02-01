@@ -123,17 +123,30 @@ class DocumentEmbeddingsRepository:
         Args:
             query: Query text
             k: Number of documents to return
-            filter: Optional metadata filter (JSONB query)
+            filter: Optional metadata filter (applied in Python to avoid
+                    jsonb_path_match type-casting issues in langchain_community)
 
         Returns:
             List of relevant documents
         """
         vector_store = self._get_vector_store()
-        return vector_store.similarity_search(
-            query=query,
-            k=k,
-            filter=filter,
-        )
+
+        # Fetch extra candidates when filtering, so we have enough after filtering
+        fetch_k = k * 3 if filter else k
+        docs = vector_store.similarity_search(query=query, k=fetch_k)
+
+        if filter:
+            docs = [
+                doc
+                for doc in docs
+                if all(
+                    doc.metadata.get(key) == value
+                    for key, value in filter.items()
+                )
+            ]
+            docs = docs[:k]
+
+        return docs
 
     def similarity_search_with_score(
         self,
@@ -147,17 +160,30 @@ class DocumentEmbeddingsRepository:
         Args:
             query: Query text
             k: Number of documents to return
-            filter: Optional metadata filter
+            filter: Optional metadata filter (applied in Python)
 
         Returns:
             List of (document, score) tuples
         """
         vector_store = self._get_vector_store()
-        return vector_store.similarity_search_with_score(
-            query=query,
-            k=k,
-            filter=filter,
+
+        fetch_k = k * 3 if filter else k
+        results = vector_store.similarity_search_with_score(
+            query=query, k=fetch_k
         )
+
+        if filter:
+            results = [
+                (doc, score)
+                for doc, score in results
+                if all(
+                    doc.metadata.get(key) == value
+                    for key, value in filter.items()
+                )
+            ]
+            results = results[:k]
+
+        return results
 
     def get_retriever(
         self,
@@ -214,7 +240,10 @@ class DocumentEmbeddingsRepository:
             Dictionary with collection statistics
         """
         try:
-            conn = psycopg2.connect(self.connection_string)
+            psycopg2_url = self.connection_string.replace(
+                "postgresql+psycopg2://", "postgresql://"
+            )
+            conn = psycopg2.connect(psycopg2_url)
             cursor = conn.cursor()
 
             # Count total documents in the collection
