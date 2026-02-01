@@ -32,3 +32,10 @@ prompts:
   exam.questions.user:
     path: "exam/questions_usr_prompt.st"
     format: "st"
+  question.system:
+    path: "question/sys_prompt.st"
+    format: "st"
+  question.user:
+    path: "question/usr_prompt.st"
+    format: "st"
+
