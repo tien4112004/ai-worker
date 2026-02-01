@@ -20,7 +20,7 @@ class MatrixContent(BaseModel):
     """Represents a content cell in the exam matrix."""
 
     difficulty: Literal[
-        "knowledge", "comprehension", "application", "advanced_application"
+        "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
     ] = Field(..., description="Difficulty level")
     numberOfQuestions: int = Field(
         ...,
@@ -77,11 +77,11 @@ class MatrixDimensions(BaseModel):
         ..., description="List of topics (first dimension)"
     )
     difficulties: List[str] = Field(
-        default=["knowledge", "comprehension", "application"],
+        default=["KNOWLEDGE", "COMPREHENSION", "APPLICATION"],
         description="List of difficulty levels (second dimension)",
     )
     questionTypes: List[str] = Field(
-        default=["multiple_choice", "fill_in_blank", "matching", "open_ended"],
+        default=["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"],
         description="List of question types (third dimension)",
         alias="question_types",
     )
@@ -177,11 +177,11 @@ class GenerateMatrixRequest(BaseModel):
         ..., ge=1, description="Target total points", alias="total_points"
     )
     difficulties: Optional[List[str]] = Field(
-        default=["knowledge", "comprehension", "application"],
+        default=["KNOWLEDGE", "COMPREHENSION", "APPLICATION"],
         description="Difficulty levels to include",
     )
     questionTypes: Optional[List[str]] = Field(
-        default=["multiple_choice", "fill_in_blank", "true_false", "matching"],
+        default=["MULTIPLE_CHOICE", "FILL_IN_BLANK", "TRUE_FALSE", "MATCHING"],
         description="Question types to include",
         alias="question_types",
     )
@@ -211,12 +211,12 @@ class GenerateMatrixRequest(BaseModel):
             "difficulties": (
                 ", ".join(self.difficulties)
                 if self.difficulties
-                else "knowledge, comprehension, application, advanced_application"
+                else "KNOWLEDGE, COMPREHENSION, APPLICATION, ADVANCED_APPLICATION"
             ),
             "question_types": (
                 ", ".join(self.questionTypes)
                 if self.questionTypes
-                else "multiple_choice, fill_in_blank, matching, open_ended"
+                else "MULTIPLE_CHOICE, FILL_IN_BLANK, MATCHING, OPEN_ENDED"
             ),
             "additional_requirements": self.additionalRequirements or "",
         }
@@ -227,18 +227,18 @@ class MatrixItem(BaseModel):
 
     topic: str = Field(..., description="Topic or subtopic for questions")
     question_type: Literal[
-        "multiple_choice",
-        "true_false",
-        "fill_in_blank",
-        "open_ended",
-        "matching",
+        "MULTIPLE_CHOICE",
+        "TRUE_FALSE",
+        "FILL_IN_BLANK",
+        "OPEN_ENDED",
+        "MATCHING",
     ] = Field(..., description="Type of question")
     count: int = Field(
         ..., ge=1, description="Number of questions to generate"
     )
     points_each: int = Field(..., ge=1, description="Points for each question")
     difficulty: Literal[
-        "knowledge", "comprehension", "application", "advanced_application"
+        "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
     ] = Field(..., description="Difficulty level")
     requires_context: bool = Field(
         default=False,
@@ -353,7 +353,7 @@ class Question(BaseModel):
 
     type: Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
     difficulty: Literal[
-        "knowledge", "comprehension", "application", "advanced_application"
+        "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
     ]
     title: str = Field(..., description="Question text/prompt")
     titleImageUrl: Optional[str] = Field(None, alias="title_image_url")
@@ -417,13 +417,13 @@ class GenerateQuestionsFromTopicRequest(BaseModel):
 
     questions_per_difficulty: Dict[
         Literal[
-            "knowledge", "comprehension", "application", "advanced_application"
+            "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
         ],
         int,
     ] = Field(..., description="Number of questions for each difficulty level")
 
     question_types: List[
-        Literal["multiple_choice", "fill_in_blank", "matching", "open_ended"]
+        Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
     ] = Field(..., description="Types of questions to generate")
 
     additional_requirements: Optional[str] = Field(
@@ -459,13 +459,13 @@ class GenerateQuestionsFromContextRequest(BaseModel):
 
     questions_per_difficulty: Dict[
         Literal[
-            "knowledge", "comprehension", "application", "advanced_application"
+            "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
         ],
         int,
     ] = Field(..., description="Number of questions for each difficulty level")
 
     question_types: List[
-        Literal["multiple_choice", "fill_in_blank", "matching", "open_ended"]
+        Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
     ] = Field(..., description="Types of questions to generate")
 
     additional_requirements: Optional[str] = Field(

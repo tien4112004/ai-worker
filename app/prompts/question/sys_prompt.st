@@ -8,8 +8,8 @@ You must return a JSON array of Question objects. Each Question follows this str
 
 ```json
 {
-  "type": "multiple_choice" | "fill_in_blank" | "matching" | "open_ended",
-  "difficulty": "knowledge" | "comprehension" | "application" | "advanced_application",
+  "type": "MULTIPLE_CHOICE" | "FILL_IN_BLANK" | "MATCHING" | "OPEN_ENDED",
+  "difficulty": "KNOWLEDGE" | "COMPREHENSION" | "APPLICATION" | "ADVANCED_APPLICATION",
   "title": "Question text/prompt",
   "titleImageUrl": null,
   "explanation": "Explanation of the answer",
@@ -28,7 +28,7 @@ You must return a JSON array of Question objects. Each Question follows this str
 ### 1. MULTIPLE_CHOICE
 ```json
 {
-  "type": "multiple_choice",
+  "type": "MULTIPLE_CHOICE",
   "title": "What is 2 + 2?",
   "data": {
     "type": "MULTIPLE_CHOICE",
@@ -160,10 +160,10 @@ You must return a JSON array of Question objects. Each Question follows this str
 ## Difficulty Levels
 
 Use the requested difficulty distribution to determine the number of questions for each level:
-- knowledge (nhận biết) - Direct recall, basic recognition (points: 1.0)
-- comprehension (thông hiểu) - Understanding, application (points: 2.0)
-- application (vận dụng) - Analysis, problem-solving using learned concepts (points: 3.0)
-- advanced_application (vận dụng cao) - Complex analysis, synthesis, evaluation (points: 4.0-5.0)
+- KNOWLEDGE (nhận biết) - Direct recall, basic recognition (points: 1.0)
+- COMPREHENSION (thông hiểu) - Understanding, application (points: 2.0)
+- APPLICATION (vận dụng) - Analysis, problem-solving using learned concepts (points: 3.0)
+- ADVANCED_APPLICATION (vận dụng cao) - Complex analysis, synthesis, evaluation (points: 4.0-5.0)
 
 ## Requirements
 

@@ -60,15 +60,15 @@ class ExamService:
         # Prepare prompt variables
         prompt_vars = request.to_dict()
         prompt_vars["difficulties"] = request.difficulties or [
-            "knowledge",
-            "comprehension",
-            "application",
+            "KNOWLEDGE",
+            "COMPREHENSION",
+            "APPLICATION",
         ]
         prompt_vars["question_types"] = request.questionTypes or [
-            "multiple_choice",
-            "fill_in_blank",
-            "true_false",
-            "matching",
+            "MULTIPLE_CHOICE",
+            "FILL_IN_BLANK",
+            "TRUE_FALSE",
+            "MATCHING",
         ]
 
         sys_msg = self._system("exam.matrix.system", prompt_vars)
@@ -114,15 +114,15 @@ class ExamService:
                 topics=topics,
                 difficulties=dims_data.get(
                     "difficulties",
-                    ["knowledge", "comprehension", "application"],
+                    ["KNOWLEDGE", "COMPREHENSION", "APPLICATION"],
                 ),
                 question_types=dims_data.get(
                     "questionTypes",
                     [
-                        "multiple_choice",
-                        "fill_in_blank",
-                        "true_false",
-                        "matching",
+                        "MULTIPLE_CHOICE",
+                        "FILL_IN_BLANK",
+                        "TRUE_FALSE",
+                        "MATCHING",
                     ],
                 ),
             )
@@ -331,7 +331,7 @@ class ExamService:
         # Format difficulty distribution
         difficulty_distribution = "\n".join(
             [
-                f"  - {difficulty.lower()}: {count} questions"
+                f"  - {difficulty}: {count} questions"
                 for difficulty, count in request.questions_per_difficulty.items()
                 if count > 0
             ]
@@ -454,7 +454,7 @@ class ExamService:
         # Format difficulty distribution
         difficulty_distribution = "\n".join(
             [
-                f"  - {difficulty.lower()}: {count} questions"
+                f"  - {difficulty}: {count} questions"
                 for difficulty, count in request.questions_per_difficulty.items()
                 if count > 0
             ]

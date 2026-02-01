@@ -12,7 +12,7 @@ Generate questions based on the provided exam matrix. Each matrix item specifies
 
 ### Question Writing Guidelines by Type
 
-**multiple_choice:**
+**MULTIPLE_CHOICE:**
 - Options should be plausible but have one clearly correct answer
 - Use 3 options for K-2, 4 options for grades 3-5
 - Avoid "all of the above" or "none of the above"
@@ -27,7 +27,7 @@ C) Ice cream
 Correct: B
 ```
 
-**true_false:**
+**TRUE_FALSE:**
 - State clearly and unambiguously
 - Avoid absolutes like "always" or "never" unless truly absolute
 - Test important concepts, not trivial details
@@ -38,7 +38,7 @@ Correct: true
 Explanation: The sun always rises in the east and sets in the west.
 ```
 
-**fill_in_blank:**
+**FILL_IN_BLANK:**
 - Place blank strategically (usually at or near the end)
 - Context should clearly indicate the answer
 - Accept reasonable variations in spelling for younger grades
@@ -48,7 +48,7 @@ Question: The process by which plants make their own food is called ____.
 Correct: photosynthesis
 ```
 
-**long_answer:**
+**OPEN_ENDED:**
 - Provide clear guidance on what is expected
 - For k-2: 1-2 sentences, for 3-5: 3-5 sentences
 - Include key points in the sample answer for grading
@@ -58,7 +58,7 @@ Question: Explain why seasons change throughout the year.
 Sample Answer: Seasons change because Earth tilts on its axis as it orbits the sun. When the Northern Hemisphere tilts toward the sun, it experiences summer with longer days and more direct sunlight. When it tilts away, it experiences winter with shorter days and less direct sunlight.
 ```
 
-**matching:**
+**MATCHING:**
 - Keep both lists to 5-8 items maximum
 - Make sure each pair is clearly related
 - Items should be at similar specificity levels
@@ -128,10 +128,10 @@ Return ONLY a valid JSON array. Each item in the array represents questions for 
   } or null,
   "questions": [
     {
-      "question_type": "multiple_choice|true_false|fill_in_blank|open_ended|matching",
+      "question_type": "MULTIPLE_CHOICE|TRUE_FALSE|FILL_IN_BLANK|OPEN_ENDED|MATCHING",
       "topic": "string",
       "grade_level": "K|1|2|3|4|5",
-      "difficulty": "knowledge|comprehension|application|advanced_application",
+      "difficulty": "KNOWLEDGE|COMPREHENSION|APPLICATION|ADVANCED_APPLICATION",
       "content": "string",
       "answers": ["array of strings"] or {"left": [], "right": []},
       "correct_answer": string or boolean or [{"left": "string", "right": "string"}],

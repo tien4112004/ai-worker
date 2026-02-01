@@ -27,19 +27,19 @@ ${question_types}
 
 1. **Topic Balance**: Distribute questions across topics based on their importance and complexity
 2. **Difficulty Progression**:
-   - easy: ~40-50% of questions (foundational concepts)
-   - medium: ~30-40% of questions (application and understanding)
-   - hard: ~10-20% of questions (analysis and advanced application)
+   - EASY: ~40-50% of questions (foundational concepts)
+   - MEDIUM: ~30-40% of questions (application and understanding)
+   - HARD: ~10-20% of questions (analysis and advanced application)
 3. **Question Type Variety**: Use a mix of question types appropriate for each topic
-   - multiple_choice: Good for all difficulty levels
-   - fill_in_blank: Good for recall and comprehension
-   - true_false: Good for quick concept checks
-   - matching: Good for relationships and associations
+   - MULTIPLE_CHOICE: Good for all difficulty levels
+   - FILL_IN_BLANK: Good for recall and comprehension
+   - TRUE_FALSE: Good for quick concept checks
+   - MATCHING: Good for relationships and associations
 
 ### Grade Level Considerations
 
 Adjust the distribution based on grade level:
-- **Lower grades (k-2)**: More multiple_choice, true_false; fewer open_ended
+- **Lower grades (k-2)**: More MULTIPLE_CHOICE, TRUE_FALSE; fewer OPEN_ENDED
 - **Middle grades (3-5)**: Balanced mix of all types
 - **Higher grades (6+)**: Can include more complex question types
 
@@ -59,8 +59,8 @@ Return ONLY a valid JSON object with this exact structure:
       {"id": "topic-1", "name": "Topic Name 1"},
       {"id": "topic-2", "name": "Topic Name 2"}
     ],
-    "difficulties": ["knowledge", "comprehension", "application", "advanced_application"],
-    "questionTypes": ["multiple_choice", "fill_in_blank", "matching", "open_ended"]
+    "difficulties": ["KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"],
+    "questionTypes": ["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
   },
   "matrix": [
     [
