@@ -8,8 +8,8 @@ You must return a JSON array of Question objects. Each Question follows this str
 
 ```json
 {
-  "type": "MULTIPLE_CHOICE" | "FILL_IN_BLANK" | "MATCHING" | "OPEN_ENDED",
-  "difficulty": "KNOWLEDGE" | "COMPREHENSION" | "APPLICATION" | "ADVANCED_APPLICATION",
+  "type": "multiple_choice" | "fill_in_blank" | "matching" | "open_ended",
+  "difficulty": "knowledge" | "comprehension" | "application" | "advanced_application",
   "title": "Question text/prompt",
   "titleImageUrl": null,
   "explanation": "Explanation of the answer",
@@ -28,7 +28,7 @@ You must return a JSON array of Question objects. Each Question follows this str
 ### 1. MULTIPLE_CHOICE
 ```json
 {
-  "type": "MULTIPLE_CHOICE",
+  "type": "multiple_choice",
   "title": "What is shown in the image?",
   "data": {
     "type": "MULTIPLE_CHOICE",
@@ -67,7 +67,7 @@ You must return a JSON array of Question objects. Each Question follows this str
 ### 2. FILL_IN_BLANK
 ```json
 {
-  "type": "FILL_IN_BLANK",
+  "type": "fill_in_blank",
   "title": "Complete the sentence based on the passage",
   "data": {
     "type": "FILL_IN_BLANK",
@@ -100,7 +100,7 @@ You must return a JSON array of Question objects. Each Question follows this str
 ### 3. MATCHING
 ```json
 {
-  "type": "MATCHING",
+  "type": "matching",
   "title": "Match the items found in the context",
   "data": {
     "type": "MATCHING",
@@ -143,7 +143,7 @@ You must return a JSON array of Question objects. Each Question follows this str
 ### 4. OPEN_ENDED
 ```json
 {
-  "type": "OPEN_ENDED",
+  "type": "open_ended",
   "title": "Explain the main idea of the passage",
   "data": {
     "type": "OPEN_ENDED",
@@ -160,10 +160,10 @@ You must return a JSON array of Question objects. Each Question follows this str
 ## Difficulty Levels
 
 Use the requested difficulty distribution to determine the number of questions for each level:
-- KNOWLEDGE (nhận biết) - Direct recall, basic recognition (points: 1.0)
-- COMPREHENSION (thông hiểu) - Understanding, application (points: 2.0)
-- APPLICATION (vận dụng) - Analysis, problem-solving using learned concepts (points: 3.0)
-- ADVANCED_APPLICATION (vận dụng cao) - Complex analysis, synthesis, evaluation (points: 4.0-5.0)
+- knowledge (nhận biết) - Direct recall, basic recognition (points: 1.0)
+- comprehension (thông hiểu) - Understanding, application (points: 2.0)
+- application (vận dụng) - Analysis, problem-solving using learned concepts (points: 3.0)
+- advanced_application (vận dụng cao) - Complex analysis, synthesis, evaluation (points: 4.0-5.0)
 
 ## Requirements
 

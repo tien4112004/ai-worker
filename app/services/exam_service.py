@@ -467,7 +467,7 @@ class ExamService:
         # Format difficulty distribution
         difficulty_distribution = "\n".join(
             [
-                f"  - {difficulty.capitalize()}: {count} questions"
+                f"  - {difficulty.lower()}: {count} questions"
                 for difficulty, count in request.questions_per_difficulty.items()
                 if count > 0
             ]
@@ -590,7 +590,7 @@ class ExamService:
         # Format difficulty distribution
         difficulty_distribution = "\n".join(
             [
-                f"  - {difficulty.upper()}: {count} questions"
+                f"  - {difficulty.lower()}: {count} questions"
                 for difficulty, count in request.questions_per_difficulty.items()
                 if count > 0
             ]

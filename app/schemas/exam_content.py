@@ -417,13 +417,13 @@ class GenerateQuestionsFromTopicRequest(BaseModel):
 
     questions_per_difficulty: Dict[
         Literal[
-            "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
+            "knowledge", "comprehension", "application", "advanced_application"
         ],
         int,
     ] = Field(..., description="Number of questions for each difficulty level")
 
     question_types: List[
-        Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
+        Literal["multiple_choice", "fill_in_blank", "matching", "open_ended"]
     ] = Field(..., description="Types of questions to generate")
 
     additional_requirements: Optional[str] = Field(
@@ -459,13 +459,13 @@ class GenerateQuestionsFromContextRequest(BaseModel):
 
     questions_per_difficulty: Dict[
         Literal[
-            "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
+            "knowledge", "comprehension", "application", "advanced_application"
         ],
         int,
     ] = Field(..., description="Number of questions for each difficulty level")
 
     question_types: List[
-        Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
+        Literal["multiple_choice", "fill_in_blank", "matching", "open_ended"]
     ] = Field(..., description="Types of questions to generate")
 
     additional_requirements: Optional[str] = Field(
