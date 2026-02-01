@@ -40,11 +40,6 @@ class DocumentEmbeddingsRepository:
             vertex_project_id: Google Cloud project ID
             vertex_location: Google Cloud location
             service_account_file: Path to service account JSON
-            pg_password: PostgreSQL password
-            pg_connection_string: Full connection string (overrides other pg params)
-            vertex_project_id: Google Cloud project ID
-            vertex_location: Google Cloud location
-            service_account_file: Path to service account JSON
         """
         self.embedding_model = embedding_model
         self.collection_name = collection_name

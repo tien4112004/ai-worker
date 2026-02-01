@@ -10,6 +10,8 @@ from app.schemas.token_usage import TokenUsage
 class OpenAIAdapter(RAGAdapterMixin):
     def __init__(self, model_name: str, **params):
         # REQUIRES: OPENAI_API_KEY in env
+        self.model_name = model_name
+        self.provider = "openai"
         self.client = ChatOpenAI(model=model_name, **params)
 
     def run(

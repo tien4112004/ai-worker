@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Generator
 
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
@@ -7,6 +7,7 @@ from app.schemas.slide_content import (
     OutlineGenerateRequest,
     PresentationGenerateRequest,
 )
+from app.schemas.token_usage import TokenUsage
 
 
 class ContentMismatchError(Exception):

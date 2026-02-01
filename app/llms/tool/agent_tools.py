@@ -3,9 +3,6 @@ from typing import Any, Dict, Optional
 from langchain.tools import tool
 
 from app.core.global_depends import Container
-from app.repositories.document_embeddings_repository import (
-    DocumentEmbeddingsRepository,
-)
 
 # TODO: Refactor
 

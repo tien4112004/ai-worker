@@ -52,29 +52,6 @@ class QueryRequest(BaseModel):
     subject_code: Optional[str] = None
 
 
-@router.post("/query")
-def rag_query(
-    request: QueryRequest,
-    svc: DocumentEmbeddingsRepositoryDep,
-):
-    filters = {}
-    if request.grade is not None:
-        filters["grade"] = request.grade
-    if request.subject_code is not None:
-        filters["subject_code"] = request.subject_code
-
-    result = svc.similarity_search_with_score(
-        request.query, filter=filters or None, k=5
-    )
-
-    return {
-        "results": [
-            {"document": doc.page_content, "score": score}
-            for doc, score in result
-        ]
-    }
-
-
 @router.post("/presentations/generate")
 def generate_presentation_with_rag(
     presentationGenerateRequest: PresentationGenerateRequest,
