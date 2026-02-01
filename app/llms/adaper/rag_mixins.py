@@ -5,7 +5,6 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 from langgraph.prebuilt.chat_agent_executor import create_tool_calling_executor
 
 from app.llms.tool.agent_tools import tools
-from app.prompts.loader import PromptStore
 from app.schemas.token_usage import TokenUsage
 
 
@@ -35,14 +34,9 @@ class RAGAdapterMixin:
         """
         from langchain_core.messages import HumanMessage
 
-        from app.core.config import settings
         from app.llms.tool.agent_tools import (
             clear_search_filters,
-            set_global_repository,
             set_search_filters,
-        )
-        from app.repositories.document_embeddings_repository import (
-            DocumentEmbeddingsRepository,
         )
 
         if not hasattr(self, "client"):
@@ -50,21 +44,7 @@ class RAGAdapterMixin:
                 "Adapter must have 'client' attribute to use RAGMixin"
             )
 
-        llm = self.client
-
         try:
-            # Initialize repository for the tool
-            repo = DocumentEmbeddingsRepository(
-                embedding_model=settings.embedding_model,
-                collection_name=settings.collection_name,
-                pg_connection_string=settings.pg_connection_string,
-                vertex_project_id=settings.project_id,
-                vertex_location=settings.location,
-                service_account_file=settings.service_account_json,
-            )
-            set_global_repository(repo)
-            print(f"[DEBUG] RAG repository initialized")
-
             # Set filters before creating the agent
             if filters:
                 set_search_filters(filters)
@@ -72,7 +52,7 @@ class RAGAdapterMixin:
 
             # Define agent
             agent = create_tool_calling_executor(
-                llm,
+                self.client,
                 tools,
                 prompt=system_prompt,
             )

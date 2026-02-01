@@ -6,7 +6,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException, Request, status
 from sse_starlette.sse import EventSourceResponse
 
-from app.depends import ExamServiceDep
+from app.core.fastapi_depends import ExamServiceDep
 from app.schemas.exam_content import (
     ExamMatrix,
     GenerateMatrixRequest,
