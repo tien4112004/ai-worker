@@ -50,3 +50,4 @@ arize-phoenix>=4.29.0
 deprecated>=1.2.14
 openinference-instrumentation-langchain>=0.1.56
 openinference-instrumentation-google-genai>=0.1.8
+openinference-instrumentation>=0.1.40
