@@ -74,7 +74,7 @@ class ExamService:
         sys_msg = self._system("exam.matrix.system", prompt_vars)
         usr_msg = self._system("exam.matrix.user", prompt_vars)
 
-        result = self.llm_executor.batch(
+        result, token_usage = self.llm_executor.batch(
             provider=request.provider,
             model=request.model,
             messages=[
@@ -94,7 +94,7 @@ class ExamService:
                 ),
                 name=matrix_data.get("metadata", {}).get("name", request.name),
                 grade=request.gradeLevel,
-                subject_code=request.subjectCode,
+                subject=request.subject,
                 created_at=matrix_data.get("metadata", {}).get(
                     "createdAt", datetime.utcnow().isoformat()
                 ),

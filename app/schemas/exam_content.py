@@ -98,8 +98,8 @@ class MatrixMetadata(BaseModel):
     grade: Optional[str] = Field(
         None, description="Grade level (e.g., '1', '2', '3', '4', '5')"
     )
-    subjectCode: Optional[str] = Field(
-        None, description="Subject code (T, TV, TA)", alias="subject_code"
+    subject: Optional[str] = Field(
+        None, description="Subject code (T, TV, TA)"
     )
     createdAt: Optional[str] = Field(
         None, description="ISO timestamp of creation", alias="created_at"
@@ -164,9 +164,7 @@ class GenerateMatrixRequest(BaseModel):
     gradeLevel: str = Field(
         ..., description="Grade level", alias="grade_level"
     )
-    subjectCode: str = Field(
-        ..., description="Subject code (T, TV, TA)", alias="subject_code"
-    )
+    subject: str = Field(..., description="Subject code (T, TV, TA)")
     totalQuestions: int = Field(
         ...,
         ge=1,
@@ -205,7 +203,7 @@ class GenerateMatrixRequest(BaseModel):
             "topics": ", ".join(self.topics),
             "topics_list": self.topics,
             "grade_level": self.gradeLevel,
-            "subject_code": self.subjectCode,
+            "subject_code": self.subject,
             "total_questions": self.totalQuestions,
             "total_points": self.totalPoints,
             "difficulties": (
