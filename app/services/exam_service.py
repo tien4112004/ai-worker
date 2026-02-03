@@ -93,7 +93,7 @@ class ExamService:
                     "id", str(uuid.uuid4())
                 ),
                 name=matrix_data.get("metadata", {}).get("name", request.name),
-                grade=request.gradeLevel,
+                grade=request.grade,
                 subject=request.subject,
                 created_at=matrix_data.get("metadata", {}).get(
                     "createdAt", datetime.utcnow().isoformat()
@@ -319,7 +319,7 @@ class ExamService:
             List of generated Question objects
         """
         logger.info(
-            f"[EXAM_SERVICE] Generating questions for topic: {request.topic}, grade: {request.grade_level}"
+            f"[EXAM_SERVICE] Generating questions for topic: {request.topic}, grade: {request.grade}"
         )
 
         # Calculate total questions
@@ -343,9 +343,9 @@ class ExamService:
             "TV": "Tiếng Việt (Vietnamese)",
             "TA": "Tiếng Anh (English)",
         }
-        subject_name = subject_map.get(request.subject_code)
+        subject_name = subject_map.get(request.subject)
         if not subject_name:
-            raise ValueError(f"Unknown subject code: {request.subject_code}")
+            raise ValueError(f"Unknown subject code: {request.subject}")
 
         # Format question types
         question_types_str = ", ".join(request.question_types)
@@ -358,7 +358,7 @@ class ExamService:
         # Build prompt variables
         prompt_vars = {
             "topic": request.topic,
-            "grade_level": request.grade_level,
+            "grade": request.grade,
             "subject": subject_name,
             "total_questions": total_questions,
             "difficulty_distribution": difficulty_distribution,
@@ -442,7 +442,7 @@ class ExamService:
             List of generated Question objects
         """
         logger.info(
-            f"[EXAM_SERVICE] Generating questions from context for grade: {request.grade_level}"
+            f"[EXAM_SERVICE] Generating questions from context for grade: {request.grade}"
         )
 
         # Calculate total questions
@@ -466,9 +466,9 @@ class ExamService:
             "TV": "Tiếng Việt (Vietnamese)",
             "TA": "Tiếng Anh (English)",
         }
-        subject_name = subject_map.get(request.subject_code)
+        subject_name = subject_map.get(request.subject)
         if not subject_name:
-            raise ValueError(f"Unknown subject code: {request.subject_code}")
+            raise ValueError(f"Unknown subject code: {request.subject}")
 
         # Format question types
         question_types_str = ", ".join(request.question_types)
@@ -485,7 +485,7 @@ class ExamService:
         prompt_vars = {
             "context_type": request.context_type,
             "objectives": objectives_str,
-            "grade_level": request.grade_level,
+            "grade": request.grade,
             "subject": subject_name,
             "total_questions": total_questions,
             "difficulty_distribution": difficulty_distribution,

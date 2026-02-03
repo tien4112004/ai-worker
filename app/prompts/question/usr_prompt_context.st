@@ -5,7 +5,7 @@ Generate exam questions based on the provided context with the following specifi
 **Objectives**:
 ${objectives}
 
-**Grade Level**: ${grade_level}
+**Grade Level**: ${grade}
 **Subject**: ${subject}
 
 **Generate ${total_questions} questions distributed as follows**:
@@ -21,7 +21,7 @@ ${additional_requirements}
 - Follow the difficulty distribution specified above.
 - Use only the question types listed (${question_types}).
 - Ensure each question follows the schema in the system prompt.
-- For grade level ${grade_level}, use age-appropriate language and concepts.
+- For grade level ${grade}, use age-appropriate language and concepts.
 - Return ONLY a valid JSON array, no code blocks or extra text.
 
 Generate the questions now.

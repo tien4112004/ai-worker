@@ -1,7 +1,7 @@
 Generate exam questions with the following specifications:
 
 **Topic**: ${topic}
-**Grade Level**: ${grade_level}
+**Grade Level**: ${grade}
 **Subject**: ${subject}
 
 **Generate ${total_questions} questions distributed as follows**:
@@ -15,7 +15,7 @@ ${additional_requirements}
 - Follow the difficulty distribution specified above
 - Use only the question types listed (${question_types})
 - Ensure each question follows the schema in the system prompt
-- For grade level ${grade_level}, use age-appropriate language and concepts
+- For grade level ${grade}, use age-appropriate language and concepts
 - For subject ${subject}, use appropriate language (Vietnamese or English)
 - Return ONLY a valid JSON array, no code blocks or extra text
 
@@ -25,7 +25,7 @@ Example output structure:
     "context": null,
     "question_number": null,
     "topic": "${topic}",
-    "grade_level": "${grade_level}",
+    "grade": "${grade}",
     "difficulty": "easy",
     "question": {
       "question_type": "multiple_choice",

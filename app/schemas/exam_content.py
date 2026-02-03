@@ -161,9 +161,7 @@ class GenerateMatrixRequest(BaseModel):
     topics: List[str] = Field(
         ..., min_length=1, description="List of topic names to include"
     )
-    gradeLevel: str = Field(
-        ..., description="Grade level", alias="grade_level"
-    )
+    gradeLevel: str = Field(..., description="Grade", alias="grade")
     subject: str = Field(..., description="Subject code (T, TV, TA)")
     totalQuestions: int = Field(
         ...,
@@ -202,8 +200,8 @@ class GenerateMatrixRequest(BaseModel):
             "name": self.name,
             "topics": ", ".join(self.topics),
             "topics_list": self.topics,
-            "grade_level": self.gradeLevel,
-            "subject_code": self.subject,
+            "grade": self.grade,
+            "subject": self.subject,
             "total_questions": self.totalQuestions,
             "total_points": self.totalPoints,
             "difficulties": (
@@ -410,8 +408,8 @@ class GenerateQuestionsFromTopicRequest(BaseModel):
     """Request to generate questions from a topic."""
 
     topic: str = Field(..., description="Topic or chapter name")
-    grade_level: Literal["K", "1", "2", "3", "4", "5"]
-    subject_code: str = Field(..., description="Subject code: T, TV, TA")
+    grade: Literal["K", "1", "2", "3", "4", "5"]
+    subject: str = Field(..., description="Subject code: T, TV, TA")
 
     questions_per_difficulty: Dict[
         Literal[
@@ -452,8 +450,8 @@ class GenerateQuestionsFromContextRequest(BaseModel):
     objectives: List[str] = Field(
         ..., description="Learning objectives or goals for the questions"
     )
-    grade_level: Literal["K", "1", "2", "3", "4", "5"]
-    subject_code: str = Field(..., description="Subject code: T, TV, TA")
+    grade: Literal["K", "1", "2", "3", "4", "5"]
+    subject: str = Field(..., description="Subject code: T, TV, TA")
 
     questions_per_difficulty: Dict[
         Literal[

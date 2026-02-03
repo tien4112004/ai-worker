@@ -130,7 +130,7 @@ Return ONLY a valid JSON array. Each item in the array represents questions for 
     {
       "question_type": "MULTIPLE_CHOICE|TRUE_FALSE|FILL_IN_BLANK|OPEN_ENDED|MATCHING",
       "topic": "string",
-      "grade_level": "K|1|2|3|4|5",
+      "grade": "K|1|2|3|4|5",
       "difficulty": "KNOWLEDGE|COMPREHENSION|APPLICATION|ADVANCED_APPLICATION",
       "content": "string",
       "answers": ["array of strings"] or {"left": [], "right": []},

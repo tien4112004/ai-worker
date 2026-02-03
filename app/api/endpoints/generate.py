@@ -259,7 +259,7 @@ def generate_questions(
     This endpoint uses AI to create exam questions matching the Question entity schema.
     """
     logger.info(
-        f"[QUESTIONS/GENERATE] Received request for topic: {request.topic}, grade: {request.grade_level}"
+        f"[QUESTIONS/GENERATE] Received request for topic: {request.topic}, grade: {request.grade}"
     )
 
     try:
