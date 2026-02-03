@@ -109,39 +109,44 @@ class DocumentEmbeddingsRepository:
     def similarity_search(
         self,
         query: str,
-        k: int = 31,
+        k: int = 4,
         filter: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """
-        Perform similarity search for relevant documents.
+        Perform similarity search for relevant documents using native filtering.
 
         Args:
             query: Query text
             k: Number of documents to return
-            filter: Optional metadata filter (applied in Python to avoid
-                    jsonb_path_match type-casting issues in langchain_community)
+            filter: Optional metadata filter (e.g., {"subject_code": "T"})
 
         Returns:
             List of relevant documents
         """
         vector_store = self._get_vector_store()
+        return vector_store.similarity_search(query=query, k=k, filter=filter)
 
-        # Fetch extra candidates when filtering, so we have enough after filtering
-        fetch_k = k * 3 if filter else k
-        docs = vector_store.similarity_search(query=query, k=fetch_k)
+    def mmr_search(
+        self,
+        query: str,
+        k: int = 4,
+        filter: Optional[Dict[str, Any]] = None,
+    ) -> List[Document]:
+        """
+        Perform Maximal Marginal Relevance (MMR) search for diversity.
 
-        if filter:
-            docs = [
-                doc
-                for doc in docs
-                if all(
-                    doc.metadata.get(key) == value
-                    for key, value in filter.items()
-                )
-            ]
-            docs = docs[:k]
+        Args:
+            query: Query text
+            k: Number of documents to return
+            filter: Optional metadata filter
 
-        return docs
+        Returns:
+            List of relevant documents
+        """
+        vector_store = self._get_vector_store()
+        return vector_store.max_marginal_relevance_search(
+            query=query, k=k, filter=filter
+        )
 
     def similarity_search_with_score(
         self,
@@ -155,63 +160,40 @@ class DocumentEmbeddingsRepository:
         Args:
             query: Query text
             k: Number of documents to return
-            filter: Optional metadata filter (applied in Python)
+            filter: Optional metadata filter
 
         Returns:
             List of (document, score) tuples
         """
         vector_store = self._get_vector_store()
-
-        fetch_k = k * 3 if filter else k
-        results = vector_store.similarity_search_with_score(
-            query=query, k=fetch_k
+        return vector_store.similarity_search_with_score(
+            query=query, k=k, filter=filter
         )
-
-        if filter:
-            results = [
-                (doc, score)
-                for doc, score in results
-                if all(
-                    doc.metadata.get(key) == value
-                    for key, value in filter.items()
-                )
-            ]
-            results = results[:k]
-
-        return results
 
     def get_retriever(
         self,
         k: int = 4,
         search_type: str = "similarity",
         search_kwargs: Optional[Dict[str, Any]] = None,
-        grade: Optional[int] = None,
-        subject_code: Optional[str] = None,
     ) -> BaseRetriever:
         """
         Get a retriever for RAG operations.
 
         Args:
             k: Number of documents to retrieve
-            search_type: Type of search ("similarity", "mmr", or "similarity_score_threshold")
+            search_type: Type of search ("similarity", "mmr")
             search_kwargs: Additional search parameters
-            grade: Optional grade level filter (1-5)
-            subject_code: Optional subject code filter (T, TA, or TV)
 
         Returns:
             BaseRetriever instance
         """
         vector_store = self._get_vector_store()
-
-        if search_kwargs is None:
-            search_kwargs = {"k": k}
-        else:
-            search_kwargs = search_kwargs.copy()
-            search_kwargs["k"] = k
+        kwargs = (search_kwargs or {}).copy()
+        kwargs["k"] = k
 
         return vector_store.as_retriever(
             search_type=search_type,
-            search_kwargs=search_kwargs,
+            search_kwargs=kwargs,
         )
 
     def embed_query(self, text: str) -> List[float]:
@@ -229,7 +211,7 @@ class DocumentEmbeddingsRepository:
 
     def get_collection_stats(self) -> Dict[str, Any]:
         """
-        Get statistics about the collection.
+        Get statistics about the collection using a safe connection.
 
         Returns:
             Dictionary with collection statistics
@@ -238,43 +220,36 @@ class DocumentEmbeddingsRepository:
             psycopg2_url = self.connection_string.replace(
                 "postgresql+psycopg2://", "postgresql://"
             )
-            conn = psycopg2.connect(psycopg2_url)
-            cursor = conn.cursor()
+            with psycopg2.connect(psycopg2_url) as conn:
+                with conn.cursor() as cursor:
+                    # Count total documents in the collection
+                    cursor.execute(
+                        """
+                        SELECT COUNT(*)
+                        FROM langchain_pg_embedding
+                        WHERE collection_id = (
+                            SELECT uuid
+                            FROM langchain_pg_collection
+                            WHERE name = %s
+                        )
+                        """,
+                        (self.collection_name,),
+                    )
 
-            # Count total documents in the collection
-            cursor.execute(
-                """
-                SELECT COUNT(*)
-                FROM langchain_pg_embedding
-                WHERE collection_id = (
-                    SELECT uuid
-                    FROM langchain_pg_collection
-                    WHERE name = %s
-                )
-                """,
-                (self.collection_name,),
-            )
+                    result = cursor.fetchone()
+                    count = result[0] if result else 0
 
-            result = cursor.fetchone()
-            count = result[0] if result else 0
-
-            cursor.close()
-            conn.close()
-
-            return {
-                "collection_name": self.collection_name,
-                "document_count": count,
-                "database": self.connection_string.split("/")[-1].split("?")[
-                    0
-                ],
-            }
+                    return {
+                        "collection_name": self.collection_name,
+                        "document_count": count,
+                        "database": self.connection_string.split("/")[
+                            -1
+                        ].split("?")[0],
+                    }
         except Exception as e:
             return {
                 "collection_name": self.collection_name,
                 "error": str(e),
-                "database": self.connection_string.split("/")[-1].split("?")[
-                    0
-                ],
             }
 
     def delete_collection(self) -> None:

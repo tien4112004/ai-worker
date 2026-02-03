@@ -1,50 +1,48 @@
+from contextvars import ContextVar
 from typing import Any, Dict, Optional
 
 from langchain.tools import tool
 
 from app.core.global_depends import Container
 
-# TODO: Refactor
-
-_filters: Optional[Dict[str, Any]] = None
+# Thread-safe storage for search filters
+_filters_ctx: ContextVar[Optional[Dict[str, Any]]] = ContextVar(
+    "search_filters", default=None
+)
 
 
 def set_search_filters(filters: Optional[Dict[str, Any]] = None):
     """
-    Set filters for document search.
+    Set filters for document search in a thread-safe way.
 
     Args:
         filters: Dictionary with filter criteria (e.g., {"subject_code": "T", "grade": "5"})
-                 subject_code can be: 'T' (Toán), 'TV' (Tiếng Việt), 'TA' (Tiếng Anh)
     """
-    global _filters
-    _filters = filters
+    _filters_ctx.set(filters)
 
 
 def clear_search_filters():
-    """Clear any active search filters."""
-    global _filters
-    _filters = None
+    """Clear any active search filters for the current context."""
+    _filters_ctx.set(None)
 
 
 @tool
-def search_documents(query: str, k: int = 10) -> str:
+def search_mmr(query: str, k: int = 10) -> str:
     """
     Search for relevant educational documents and materials in the knowledge base.
 
-    Use this tool FIRST before answering any questions to find accurate, relevant information.
-    This tool searches through a database of educational content and returns the most relevant
-    documents that can help you create accurate, fact-based lesson outlines.
+    Use this tool to find accurate, fact-based information from the database
+    to answer questions or create lesson content.
 
-    The search automatically filters by subject and grade level when specified in the request.
-    It retrieves multiple documents to ensure comprehensive coverage of the topic.
+    The search can be filtered by metadata like subject and grade level.
+    It retrieves multiple documents to ensure comprehensive coverage.
 
     Args:
-        query: The topic or question to search for (e.g., "environmental protection", "Vietnamese history")
-        k: Number of documents to retrieve (recommended: 10 or more for better coverage)
+        query: The topic or question to search for.
+        k: Number of documents to retrieve (default: 10).
 
     Returns:
-        A formatted string containing the content of relevant documents
+        A formatted string containing the content of relevant documents.
     """
     # Get repository from container
     document_embeddings_repository = Container.document_embeddings_repository()
@@ -52,127 +50,60 @@ def search_documents(query: str, k: int = 10) -> str:
     if document_embeddings_repository is None:
         return "Error: Knowledge base repository is not available."
 
+    current_filters = _filters_ctx.get()
+
     # Build filter dict for PGVector metadata filtering
     filter_dict = None
-    if _filters:
+    if current_filters:
         filter_dict = {}
-        if _filters.get("subject_code"):
-            filter_dict["subject_code"] = _filters["subject_code"]
-        if _filters.get("grade"):
-            filter_dict["grade"] = int(_filters["grade"])
+        # Support both snake_case and camelCase or specific field names
+        if current_filters.get("subject_code"):
+            filter_dict["subject_code"] = current_filters["subject_code"]
+        if current_filters.get("grade"):
+            try:
+                filter_dict["grade"] = int(current_filters["grade"])
+            except (ValueError, TypeError):
+                pass
 
-    # Enforce minimum k value (LLM sometimes passes k=1 which is too few)
-    k = max(k, 5)  # At least 5 documents
+    # Enforce reasonable k value
+    k = max(min(k, 20), 5)
 
-    print(
-        f"[DEBUG] search_documents called with query: {query}, k: {k}, filters: {filter_dict}"
-    )
-
-    # Perform similarity search with filters, falling back to unfiltered if empty
-    docs = document_embeddings_repository.similarity_search(
+    # Perform similarity search with filters
+    docs = document_embeddings_repository.mmr_search(
         query=query, k=k, filter=filter_dict if filter_dict else None
     )
 
     if not docs and filter_dict:
-        print(
-            "[DEBUG] Filtered search returned empty, retrying without filters"
-        )
-        docs = document_embeddings_repository.similarity_search(
+        docs = document_embeddings_repository.mmr_search(
             query=query, k=k, filter=None
         )
 
-    # Format documents as a readable string
     if not docs:
         return "No relevant documents found in the knowledge base."
 
     result = []
     for i, doc in enumerate(docs, 1):
-        result.append(f"Document {i}:")
+        result.append(f"--- Document {i} ---")
         result.append(f"Content: {doc.page_content}")
         if doc.metadata:
-            result.append(f"Metadata: {doc.metadata}")
-        result.append("")  # Empty line for separation
+            # Only include useful metadata to save context tokens
+            relevant_meta = {
+                k: v
+                for k, v in doc.metadata.items()
+                if k in ["subject_name", "grade", "topic"]
+            }
+            if relevant_meta:
+                result.append(f"Metadata: {relevant_meta}")
+        result.append("")
 
     return "\n".join(result)
 
 
-@tool
-def search_documents_with_score(query: str, k: int = 10) -> str:
-    """
-    Search for relevant educational documents and materials in the knowledge base.
-
-    Use this tool FIRST before answering any questions to find accurate, relevant information.
-    This tool searches through a database of educational content and returns the most relevant
-    documents that can help you create accurate, fact-based lesson outlines.
-
-    The search automatically filters by subject and grade level when specified in the request.
-    It retrieves multiple documents to ensure comprehensive coverage of the topic.
-
-    Args:
-        query: The topic or question to search for (e.g., "environmental protection", "Vietnamese history")
-        k: Number of documents to retrieve (recommended: 10 or more for better coverage)
-
-    Returns:
-        A formatted string containing the content of relevant documents
-    """
-    # Get repository from container
-    document_embeddings_repository = Container.document_embeddings_repository()
-
-    if document_embeddings_repository is None:
-        return "Error: Knowledge base repository is not available."
-
-    # Build filter dict for PGVector metadata filtering
-    filter_dict = None
-    if _filters:
-        filter_dict = {}
-        if _filters.get("subject_code"):
-            filter_dict["subject_code"] = _filters["subject_code"]
-        if _filters.get("grade"):
-            filter_dict["grade"] = int(_filters["grade"])
-
-    # Enforce minimum k value (LLM sometimes passes k=1 which is too few)
-    k = max(k, 5)  # At least 5 documents
-
-    print(
-        f"[DEBUG] search_documents_with_score called with query: {query}, k: {k}, filters: {filter_dict}"
-    )
-
-    # Perform similarity search with filters, falling back to unfiltered if empty
-    docs = document_embeddings_repository.similarity_search_with_score(
-        query=query, k=k, filter=filter_dict if filter_dict else None
-    )
-
-    if not docs and filter_dict:
-        print(
-            "[DEBUG] Filtered search returned empty, retrying without filters"
-        )
-        docs = document_embeddings_repository.similarity_search_with_score(
-            query=query, k=k, filter=None
-        )
-
-    # Format documents as a readable string
-    if not docs:
-        return "No relevant documents found in the knowledge base."
-
-    result = []
-    for i, (doc, score) in enumerate(docs, 1):
-        print(
-            f"[DEBUG] Retrieved Document {i} with score {score}: {doc.page_content[:100]}..."
-        )
-        result.append(f"Document {i}:")
-        result.append(f"Content: {doc.page_content}")
-        if doc.metadata:
-            result.append(f"Metadata: {doc.metadata}")
-        result.append(f"Score: {score}")
-        result.append("")  # Empty line for separation
-
-    return "\n".join(result)
-
-
-tools = [search_documents, search_documents_with_score]
+tools = [search_mmr]
 
 __all__ = [
     "tools",
     "set_search_filters",
     "clear_search_filters",
+    "search_mmr",
 ]

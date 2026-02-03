@@ -20,13 +20,13 @@ class RAGAdapterMixin:
         **kwargs,
     ) -> Tuple[Dict[str, Any], TokenUsage]:
         """
-        Run RAG pipeline (Stuff Strategy).
+        Run RAG pipeline using a tool-calling agent.
 
         Args:
             query: User query
             system_prompt: System prompt for the agent
             return_source_documents: Whether to return source documents
-            filters: Optional filters for document search (e.g., {"subject": "math", "grade": "5"})
+            filters: Optional filters for document search
             **kwargs: Additional parameters
 
         Returns:
@@ -45,10 +45,9 @@ class RAGAdapterMixin:
             )
 
         try:
-            # Set filters before creating the agent
+            # Set filters in context-local storage (thread-safe)
             if filters:
                 set_search_filters(filters)
-                print(f"[DEBUG] RAG filters set: {filters}")
 
             # Define agent
             agent = create_tool_calling_executor(
@@ -57,14 +56,12 @@ class RAGAdapterMixin:
                 prompt=system_prompt,
             )
 
-            # Execute - LangGraph agents expect input with messages key
+            # Execute
             response = agent.invoke(
                 input={"messages": [HumanMessage(content=query)]}
             )
 
-            print("[DEBUG] RAG Response: ", response)
-
-            # Extract the final AI message from response
+            # Extract the final AI message
             messages = response.get("messages", [])
             final_message = messages[-1] if messages else None
 
@@ -73,19 +70,20 @@ class RAGAdapterMixin:
                 "query": query,
             }
 
+            # Note: structured context requires custom state in LangGraph
             if return_source_documents and "context" in response:
                 result["source_documents"] = self._format_source_documents(
                     response["context"]
                 )
                 result["num_sources"] = len(response["context"])
 
-            # Extract token usage from the final message if available
+            # Extract token usage from the final message
             token_usage = self._extract_token_usage(final_message)
 
             return result, token_usage
 
         finally:
-            # Always clear filters after execution to avoid leaking to next request
+            # Always clear filters from context
             clear_search_filters()
 
     def stream_rag(
@@ -96,18 +94,9 @@ class RAGAdapterMixin:
         **kwargs,
     ) -> Iterator:
         """
-        Stream RAG pipeline responses using tool-calling agent.
+        Stream RAG pipeline responses.
 
-        Yields str content chunks as the LLM generates them, then
-        yields a single TokenUsage object as the final item.
-
-        Args:
-            query: User query
-            system_prompt: System prompt for the agent
-            filters: Optional filters for document search
-
-        Yields:
-            str chunks of the LLM response, followed by a TokenUsage
+        Yields str content chunks followed by a final TokenUsage object.
         """
         from langchain_core.messages import AIMessageChunk, HumanMessage
 
@@ -124,7 +113,6 @@ class RAGAdapterMixin:
         try:
             if filters:
                 set_search_filters(filters)
-                print(f"[DEBUG] RAG stream filters set: {filters}")
 
             agent = create_tool_calling_executor(
                 self.client,
@@ -132,11 +120,8 @@ class RAGAdapterMixin:
                 prompt=system_prompt,
             )
 
-            total_usage = {
-                "input_tokens": 0,
-                "output_tokens": 0,
-                "total_tokens": 0,
-            }
+            total_usage = {"input": 0, "output": 0}
+
             for chunk, metadata in agent.stream(
                 {"messages": [HumanMessage(content=query)]},
                 stream_mode="messages",
@@ -144,44 +129,39 @@ class RAGAdapterMixin:
                 if not isinstance(chunk, AIMessageChunk):
                     continue
 
-                # Accumulate token usage from all AI chunks (tool-call
-                # rounds included) before filtering for content below.
+                # Accumulate usage from metadata
                 usage = getattr(chunk, "usage_metadata", None) or {}
-                if not (
-                    usage.get("input_tokens") or usage.get("output_tokens")
-                ):
+                if usage:
+                    total_usage["input"] = usage.get(
+                        "input_tokens", total_usage["input"]
+                    )
+                    total_usage["output"] = usage.get(
+                        "output_tokens", total_usage["output"]
+                    )
+                else:
+                    # Fallback for provider-specific metadata
                     rm = getattr(chunk, "response_metadata", None) or {}
-                    rm_usage = rm.get("usage_metadata", {})
-                    if rm_usage:
-                        usage = {
-                            "input_tokens": rm_usage.get(
-                                "prompt_token_count", 0
-                            ),
-                            "output_tokens": rm_usage.get(
-                                "candidates_token_count", 0
-                            ),
-                            "total_tokens": rm_usage.get(
-                                "total_token_count", 0
-                            ),
-                        }
-                total_usage["input_tokens"] += usage.get("input_tokens", 0)
-                total_usage["output_tokens"] += usage.get("output_tokens", 0)
-                total_usage["total_tokens"] += usage.get("total_tokens", 0)
+                    um = rm.get("usage_metadata", {})
+                    if um:
+                        total_usage["input"] = um.get(
+                            "prompt_token_count", total_usage["input"]
+                        )
+                        total_usage["output"] = um.get(
+                            "candidates_token_count", total_usage["output"]
+                        )
 
-                # Skip tool-use chunks (agent calling search_documents)
+                # Skip tool-calling chunks
                 if chunk.tool_calls:
                     continue
+
                 if chunk.content and isinstance(chunk.content, str):
                     yield chunk.content
 
-            # Yield token usage as the final item
+            # Final token usage yield
             yield TokenUsage(
-                input_tokens=total_usage["input_tokens"],
-                output_tokens=total_usage["output_tokens"],
-                total_tokens=total_usage["total_tokens"]
-                or (
-                    total_usage["input_tokens"] + total_usage["output_tokens"]
-                ),
+                input_tokens=total_usage["input"],
+                output_tokens=total_usage["output"],
+                total_tokens=total_usage["input"] + total_usage["output"],
                 model=getattr(self, "model_name", "unknown"),
                 provider=getattr(self, "provider", "unknown"),
             )
