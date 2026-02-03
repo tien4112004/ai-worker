@@ -12,6 +12,7 @@ from rich.repr import auto
 from app.api.router import api
 from app.core.config import settings
 from app.llms.executor import LLMExecutor
+from app.middleware import injectCustomTraceId
 from app.prompts.loader import PromptStore
 from app.services.content_service import ContentService
 from app.services.exam_service import ExamService
@@ -28,6 +29,7 @@ async def lifespan(app: FastAPI):
 
     # Only instrument LangChain to avoid duplicate spans from both LangChain and underlying GoogleGenAI client
     LangChainInstrumentor().instrument(tracer_provider=llm_tracer)
+    GoogleGenAIInstrumentor().instrument(tracer_provider=llm_tracer)
 
     prompt_store = PromptStore()
     llm_executor = LLMExecutor()
@@ -78,6 +80,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    app.middleware("http")(injectCustomTraceId)
     app.include_router(api, prefix="/api")
     app.add_middleware(
         CORSMiddleware,
