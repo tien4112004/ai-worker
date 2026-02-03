@@ -3,8 +3,11 @@ from datetime import datetime
 from typing import Any, Dict
 
 from google import genai
+from openinference.semconv.trace import SpanAttributes
+from opentelemetry import trace
 
 from app.core.config import settings
+from app.llms.adaper.tracing import trace_span
 
 logger = settings.logger
 
@@ -21,6 +24,7 @@ class NanoBananaAdapter:
         self.model = model
         self.client = genai.Client(api_key=api_key)
 
+    @trace_span("nano_banana_generate", system="google")
     def generate(self, message: str, **params) -> Dict[str, Any]:
         """
         Generate image based on the provided prompt using Nano Banana.
@@ -39,24 +43,16 @@ class NanoBananaAdapter:
             Dict[str, Any]: A dictionary containing either the base64 image data or an error message
         """
         try:
-            # Extract supported parameters
             number_of_images = params.get("number_of_images", 1)
 
-            # Build generation config with supported parameters
             generation_config = {}
-
-            # Add seed if provided (supported by Gemini)
             if "seed" in params and params["seed"] is not None:
                 generation_config["seed"] = params["seed"]
 
-            # Call the Gemini API
-            # Note: aspect_ratio, safety_filter_level, person_generation, negative_prompt
-            # are handled via prompt engineering rather than API parameters
             call_kwargs = {
                 "model": self.model,
-                "contents": message,  # Use 'contents' instead of 'prompt'
+                "contents": message,
             }
-
             if generation_config:
                 call_kwargs["generation_config"] = generation_config
 
@@ -74,7 +70,6 @@ class NanoBananaAdapter:
                 if candidate.content and candidate.content.parts:
                     for part in candidate.content.parts:
                         try:
-                            # Extract image data from the response
                             if (
                                 hasattr(part, "inline_data")
                                 and part.inline_data
@@ -84,7 +79,6 @@ class NanoBananaAdapter:
                                 ).decode("utf-8")
                                 images.append(base64_data)
                             elif hasattr(part, "text"):
-                                # Skip text parts in image generation
                                 continue
                         except Exception as e:
                             logger.warning(
@@ -92,7 +86,6 @@ class NanoBananaAdapter:
                             )
                             images.append(self._get_placeholder_image())
 
-            # Generate multiple images if requested
             if len(images) < number_of_images:
                 for _ in range(number_of_images - len(images)):
                     images.append(
@@ -106,9 +99,34 @@ class NanoBananaAdapter:
                     "created": datetime.now().isoformat(),
                 }
 
+            span = trace.get_current_span()
+            if response.usage_metadata:
+                usage = response.usage_metadata
+                if usage.prompt_token_count is not None:
+                    span.set_attribute(
+                        SpanAttributes.LLM_TOKEN_COUNT_PROMPT,
+                        usage.prompt_token_count,
+                    )
+                if usage.candidates_token_count is not None:
+                    span.set_attribute(
+                        SpanAttributes.LLM_TOKEN_COUNT_COMPLETION,
+                        usage.candidates_token_count,
+                    )
+                if usage.total_token_count is not None:
+                    span.set_attribute(
+                        SpanAttributes.LLM_TOKEN_COUNT_TOTAL,
+                        usage.total_token_count,
+                    )
+
+            result_images = images[:number_of_images]
+            span.set_attribute(
+                SpanAttributes.OUTPUT_VALUE,
+                f"{len(result_images)} image(s) generated",
+            )
+
             return {
-                "images": images[:number_of_images],
-                "count": len(images[:number_of_images]),
+                "images": result_images,
+                "count": len(result_images),
                 "created": datetime.now().isoformat(),
             }
 
