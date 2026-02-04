@@ -2,6 +2,10 @@ from typing import Any, Dict, Generator
 
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
+from app.prompts.subject_prompt_router import (
+    combine_system_prompts,
+    get_subject_prompt_key,
+)
 from app.schemas.mindmap_content import MindmapGenerateRequest
 from app.schemas.slide_content import (
     OutlineGenerateRequest,
@@ -25,6 +29,38 @@ class ContentRagService:
     def _system(self, key: str, vars: Dict[str, Any] | None) -> str:
         return self.prompt_store.render(key, vars)
 
+    def _system_with_subject(
+        self, key: str, vars: Dict[str, Any] | None, subject_code: str | None
+    ) -> str:
+        """Render system prompt and optionally append subject-specific prompt.
+
+        Args:
+            key: The base prompt key to render
+            vars: Variables for template substitution
+            subject_code: Optional subject code (e.g., 'T', 'TV', 'TA')
+
+        Returns:
+            Combined system prompt with subject-specific guidance if applicable
+        """
+        base_prompt = self.prompt_store.render(key, vars)
+
+        # Get subject-specific prompt if subject code is provided
+        subject_prompt_key = get_subject_prompt_key(subject_code)
+        if subject_prompt_key:
+            try:
+                subject_prompt = self.prompt_store.render(
+                    subject_prompt_key, None
+                )
+                return combine_system_prompts(base_prompt, subject_prompt)
+            except KeyError:
+                # If subject prompt not found, just use base prompt
+                print(
+                    f"[WARNING] Subject prompt key '{subject_prompt_key}' not found in registry"
+                )
+                return base_prompt
+
+        return base_prompt
+
     @staticmethod
     def _check_content_mismatch(result: dict) -> None:
         answer = result.get("answer", "").strip()
@@ -39,9 +75,10 @@ class ContentRagService:
         Returns:
             Dict: A dictionary containing the generated outline.
         """
-        sys_msg = self._system(
+        sys_msg = self._system_with_subject(
             "outline.system.rag",
             None,
+            request.subject,
         )
 
         usr_msg = self._system(
@@ -83,9 +120,10 @@ class ContentRagService:
         return result["answer"]
 
     def make_presentation_with_rag(self, request: PresentationGenerateRequest):
-        sys_msg = self._system(
+        sys_msg = self._system_with_subject(
             "presentation.system.rag",
             None,
+            request.subject,
         )
 
         usr_msg = self._system(
@@ -175,7 +213,9 @@ class ContentRagService:
     def make_outline_rag_stream(
         self, request: OutlineGenerateRequest
     ) -> Generator:
-        sys_msg = self._system("outline.system.rag", None)
+        sys_msg = self._system_with_subject(
+            "outline.system.rag", None, request.subject
+        )
         usr_msg = self._system("outline.user", request.to_dict())
 
         filters = {}
@@ -198,7 +238,9 @@ class ContentRagService:
     def make_presentation_rag_stream(
         self, request: PresentationGenerateRequest
     ) -> Generator:
-        sys_msg = self._system("presentation.system.rag", None)
+        sys_msg = self._system_with_subject(
+            "presentation.system.rag", None, request.subject
+        )
         usr_msg = self._system("presentation.user", request.to_dict())
 
         filters = {}
@@ -219,9 +261,10 @@ class ContentRagService:
         )
 
     def generate_mindmap_with_rag(self, request: MindmapGenerateRequest):
-        sys_msg = self._system(
+        sys_msg = self._system_with_subject(
             "mindmap.system.rag",
             request.to_dict(),
+            request.subject,
         )
 
         usr_msg = self._system(
@@ -261,7 +304,9 @@ class ContentRagService:
     def generate_mindmap_rag_stream(
         self, request: MindmapGenerateRequest
     ) -> Generator:
-        sys_msg = self._system("mindmap.system.rag", request.to_dict())
+        sys_msg = self._system_with_subject(
+            "mindmap.system.rag", request.to_dict(), request.subject
+        )
         usr_msg = self._system("mindmap.user", request.to_dict())
 
         filters = {}

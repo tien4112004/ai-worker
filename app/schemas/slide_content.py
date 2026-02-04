@@ -3,6 +3,13 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+# Subject code to name mapping
+SUBJECT_NAME_MAP = {
+    "T": "Math",
+    "TV": "Vietnamese",
+    "TA": "English",
+}
+
 
 # Request and Response models for outline generation
 class OutlineGenerateRequest(BaseModel):
@@ -32,6 +39,9 @@ class OutlineGenerateRequest(BaseModel):
             result["grade"] = self.grade
         if self.subject:
             result["subject"] = self.subject
+            result["subject_name"] = SUBJECT_NAME_MAP.get(
+                self.subject, self.subject
+            )
         return result
 
 
@@ -67,4 +77,7 @@ class PresentationGenerateRequest(BaseModel):
             result["grade"] = self.grade
         if self.subject:
             result["subject"] = self.subject
+            result["subject_name"] = SUBJECT_NAME_MAP.get(
+                self.subject, self.subject
+            )
         return result

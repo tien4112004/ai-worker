@@ -1,43 +1,43 @@
 prompts:
   outline.system:
-    path: "outline/sys_prompt.st"
-    format: "st"
+    path: 'outline/sys_prompt.st'
+    format: 'st'
   outline.system.rag:
-    path: "outline/sys_prompt_rag.st"
-    format: "st"
+    path: 'outline/sys_prompt_rag.st'
+    format: 'st'
   outline.user:
-    path: "outline/usr_prompt.st"
-    format: "st"
+    path: 'outline/usr_prompt.st'
+    format: 'st'
   presentation.system:
-    path: "presentation/sys_prompt.st"
-    format: "st"
+    path: 'presentation/sys_prompt.st'
+    format: 'st'
   presentation.system.rag:
-    path: "presentation/sys_prompt_rag.st"
-    format: "st"
+    path: 'presentation/sys_prompt_rag.st'
+    format: 'st'
   presentation.user:
-    path: "presentation/usr_prompt.st"
-    format: "st"
+    path: 'presentation/usr_prompt.st'
+    format: 'st'
   image.user:
-    path: "image/usr_prompt.st"
-    format: "st"
+    path: 'image/usr_prompt.st'
+    format: 'st'
   mindmap.system:
-    path: "mindmap/sys_prompt.st"
-    format: "st"
+    path: 'mindmap/sys_prompt.st'
+    format: 'st'
   mindmap.system.rag:
-    path: "mindmap/sys_prompt_rag.st"
-    format: "st"
+    path: 'mindmap/sys_prompt_rag.st'
+    format: 'st'
   mindmap.user:
-    path: "mindmap/usr_prompt.st"
-    format: "st"
+    path: 'mindmap/usr_prompt.st'
+    format: 'st'
   exam.matrix.system:
-    path: "exam/matrix_sys_prompt.st"
-    format: "st"
+    path: 'exam/matrix_sys_prompt.st'
+    format: 'st'
   exam.matrix.user:
-    path: "exam/matrix_usr_prompt.st"
-    format: "st"
+    path: 'exam/matrix_usr_prompt.st'
+    format: 'st'
   exam.questions.system:
-    path: "exam/questions_sys_prompt.st"
-    format: "st"
+    path: 'exam/questions_sys_prompt.st'
+    format: 'st'
   exam.questions.user:
     path: "exam/questions_usr_prompt.st"
     format: "st"
@@ -53,3 +53,12 @@ prompts:
   question.context.user:
     path: "question/usr_prompt_context.st"
     format: "st"
+  subject.math:
+    path: 'subject/math_sys_prompt.st'
+    format: 'st'
+  subject.literature:
+    path: 'subject/literature_sys_prompt.st'
+    format: 'st'
+  subject.english:
+    path: 'subject/english_sys_prompt.st'
+    format: 'st'
