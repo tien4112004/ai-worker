@@ -26,7 +26,7 @@ Example output structure:
     "question_number": null,
     "topic": "${topic}",
     "grade": "${grade}",
-    "difficulty": "easy",
+    "difficulty": "knowledge",
     "question": {
       "question_type": "multiple_choice",
       "content": "Your question text here?",
