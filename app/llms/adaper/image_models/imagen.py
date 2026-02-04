@@ -2,9 +2,12 @@ import warnings
 from datetime import datetime
 from typing import Any, Dict
 
+from openinference.semconv.trace import SpanAttributes
+from opentelemetry import trace
 from vertexai.preview.vision_models import ImageGenerationModel
 
 from app.core.config import settings
+from app.llms.adaper.tracing import trace_span
 
 logger = settings.logger
 
@@ -28,7 +31,9 @@ class ImagenAdapter:
         )
         # REQUIRES: VERTEX_PROJECT_ID and VERTEX_LOCATION set in env
         self._llm = ImageGenerationModel.from_pretrained(model_name=model)
+        self._model_name = model
 
+    @trace_span("imagen_generate", system="google", model_attr="_model_name")
     def generate(self, message: str, **params) -> Dict[str, Any]:
         """
         Generate image based on the provided prompt.
@@ -44,7 +49,6 @@ class ImagenAdapter:
         Returns:
             Dict[str, Any]: A dictionary containing either the base64 image data or an error message
         """
-
         try:
             response = self._llm.generate_images(prompt=message, **params)
 
@@ -64,6 +68,10 @@ class ImagenAdapter:
                     logger.warning(f"Failed to process image: {e}")
                     images.append(self._get_placeholder_image())
 
+            trace.get_current_span().set_attribute(
+                SpanAttributes.OUTPUT_VALUE,
+                f"{len(images)} image(s) generated",
+            )
             return {
                 "images": images,
                 "count": len(images),

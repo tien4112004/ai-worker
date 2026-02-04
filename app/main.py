@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from google.cloud import aiplatform
-from openinference.instrumentation.google_genai import GoogleGenAIInstrumentor
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from phoenix.otel import register
 from rich.repr import auto
@@ -12,6 +11,7 @@ from rich.repr import auto
 from app.api.router import api
 from app.core.config import settings
 from app.llms.executor import LLMExecutor
+from app.middleware.trace_id import injectCustomTraceId
 from app.prompts.loader import PromptStore
 from app.services.content_service import ContentService
 from app.services.exam_service import ExamService
@@ -26,7 +26,6 @@ async def lifespan(app: FastAPI):
         auto_instrument=False,  # Disabled to prevent duplicate spans
     )
 
-    # Only instrument LangChain to avoid duplicate spans from both LangChain and underlying GoogleGenAI client
     LangChainInstrumentor().instrument(tracer_provider=llm_tracer)
 
     prompt_store = PromptStore()
@@ -46,12 +45,15 @@ async def lifespan(app: FastAPI):
     def init_vertexai():
         """Initialize Vertex AI settings."""
         import os
+
         import vertexai
         from google.oauth2 import service_account
 
         # Skip initialization if service account file doesn't exist (for testing/mock mode)
         if not os.path.exists(settings.service_account_json):
-            print(f"Warning: Service account file not found at {settings.service_account_json}")
+            print(
+                f"Warning: Service account file not found at {settings.service_account_json}"
+            )
             print("Vertex AI initialization skipped - using mock mode")
             return
 
@@ -79,6 +81,10 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api, prefix="/api")
+    
+    # Add custom trace ID middleware (must be before CORS)
+    app.middleware("http")(injectCustomTraceId)
+    
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
