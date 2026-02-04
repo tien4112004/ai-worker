@@ -11,6 +11,7 @@ from rich.repr import auto
 from app.api.router import api
 from app.core.config import settings
 from app.llms.executor import LLMExecutor
+from app.middleware.trace_id import injectCustomTraceId
 from app.prompts.loader import PromptStore
 from app.services.content_service import ContentService
 from app.services.exam_service import ExamService
@@ -80,6 +81,10 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api, prefix="/api")
+    
+    # Add custom trace ID middleware (must be before CORS)
+    app.middleware("http")(injectCustomTraceId)
+    
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
