@@ -2,7 +2,7 @@ Generate an exam matrix with the following specifications:
 
 **Exam Details:**
 - Name: ${name}
-- Grade Level: ${grade_level}
+- Grade Level: ${grade}
 - Total Questions: ${total_questions}
 - Total Points: ${total_points}
 

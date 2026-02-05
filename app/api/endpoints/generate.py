@@ -7,7 +7,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from app.depends import ContentServiceDep
+from app.depends import ContentServiceDep, ExamServiceDep
+from app.schemas.exam_content import (
+    GenerateQuestionsFromTopicRequest,
+    Question,
+)
 from app.schemas.image_content import (
     ImageGenerateRequest,
     ImageGenerateResponse,
@@ -20,12 +24,12 @@ from app.schemas.slide_content import (
 from app.schemas.token_usage import TokenUsage
 from app.utils.server_sent_event import sse_json_by_json, sse_word_by_word
 
-
 logger = logging.getLogger(__name__)
 
 
 class GenerateResponse(BaseModel):
     """Generic response wrapper with token usage."""
+
     data: Any
     token_usage: TokenUsage | None = None
 
@@ -39,7 +43,9 @@ def generateOutline(
 ):
     result = svc.make_outline(outlineGenerateRequest)
     token_usage = svc.last_token_usage
-    logger.info(f"[OUTLINE/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    logger.info(
+        f"[OUTLINE/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
     return GenerateResponse(data=result, token_usage=token_usage)
 
 
@@ -50,9 +56,13 @@ def generateOutline_Stream(
     svc: ContentServiceDep,
 ):
     chunks, token_usage = svc.make_outline_stream(outlineGenerateRequest)
-    logger.info(f"[OUTLINE/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    logger.info(
+        f"[OUTLINE/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
     print("Starting outline stream response")
-    return EventSourceResponse(sse_word_by_word(request, chunks, token_usage), ping=None)
+    return EventSourceResponse(
+        sse_word_by_word(request, chunks, token_usage), ping=None
+    )
 
 
 @router.post("/presentations/generate")
@@ -62,7 +72,9 @@ def generatePresentation(
 ):
     result = svc.make_presentation(presentationGenerateRequest)
     token_usage = svc.last_token_usage
-    logger.info(f"[PRESENTATIONS/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    logger.info(
+        f"[PRESENTATIONS/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
     return GenerateResponse(data=result, token_usage=token_usage)
 
 
@@ -74,10 +86,16 @@ def generatePresentation_Stream(
 ):
     print("Received presentation stream request:", presentationGenerateRequest)
 
-    chunks, token_usage = svc.make_presentation_stream(presentationGenerateRequest)
-    logger.info(f"[PRESENTATIONS/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    chunks, token_usage = svc.make_presentation_stream(
+        presentationGenerateRequest
+    )
+    logger.info(
+        f"[PRESENTATIONS/GENERATE/STREAM] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
 
-    return EventSourceResponse(sse_json_by_json(request, chunks, token_usage), ping=None)
+    return EventSourceResponse(
+        sse_json_by_json(request, chunks, token_usage), ping=None
+    )
 
 
 # Mock endpoints for testing without LLM calls
@@ -87,7 +105,9 @@ def generateOutline_Mock(
 ):
     print("Received mock outline request:", outlineGenerateRequest)
     result, token_usage = svc.make_outline_mock(outlineGenerateRequest)
-    logger.info(f"[OUTLINE/GENERATE/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    logger.info(
+        f"[OUTLINE/GENERATE/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
     return GenerateResponse(data=result, token_usage=token_usage)
 
 
@@ -99,7 +119,9 @@ async def generateOutline_Mock_Stream(
 ):
     print("Received mock outline stream request:", outlineGenerateRequest)
     chunks, token_usage = svc.make_outline_stream_mock()
-    logger.info(f"[OUTLINE/GENERATE/STREAM/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    logger.info(
+        f"[OUTLINE/GENERATE/STREAM/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
 
     async def event_stream():
         for chunk in chunks:
@@ -109,7 +131,10 @@ async def generateOutline_Mock_Stream(
                 "data": base64.b64encode(chunk.encode("utf-8")).decode("ascii")
             }
 
-    return EventSourceResponse(sse_word_by_word(request, chunks, token_usage), media_type="text/event-stream")
+    return EventSourceResponse(
+        sse_word_by_word(request, chunks, token_usage),
+        media_type="text/event-stream",
+    )
 
 
 @router.post("/presentations/generate/mock")
@@ -118,8 +143,12 @@ def generatePresentation_Mock(
     presentationGenerateRequest: PresentationGenerateRequest,
 ):
     print("Received mock presentation request:", presentationGenerateRequest)
-    result, token_usage = svc.make_presentation_mock(presentationGenerateRequest)
-    logger.info(f"[PRESENTATIONS/GENERATE/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    result, token_usage = svc.make_presentation_mock(
+        presentationGenerateRequest
+    )
+    logger.info(
+        f"[PRESENTATIONS/GENERATE/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
     return GenerateResponse(data=result, token_usage=token_usage)
 
 
@@ -129,15 +158,23 @@ async def generatePresentation_Mock_Stream(
     presentationGenerateRequest: PresentationGenerateRequest,
     svc: ContentServiceDep,
 ):
-    print("Received mock presentation stream request:", presentationGenerateRequest)
+    print(
+        "Received mock presentation stream request:",
+        presentationGenerateRequest,
+    )
 
     slides, token_usage = await svc.make_presentation_stream_mock()
-    logger.info(f"[PRESENTATIONS/GENERATE/STREAM/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
-    
+    logger.info(
+        f"[PRESENTATIONS/GENERATE/STREAM/MOCK] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
+
     # Convert slide dicts to JSON strings for sse_json_by_json
     slide_strings = [json.dumps(slide, ensure_ascii=False) for slide in slides]
 
-    return EventSourceResponse(sse_json_by_json(request, slide_strings, token_usage), media_type="text/event-stream")
+    return EventSourceResponse(
+        sse_json_by_json(request, slide_strings, token_usage),
+        media_type="text/event-stream",
+    )
 
 
 @router.post("/image/generate", response_model=ImageGenerateResponse)
@@ -153,7 +190,9 @@ def generate_image(
             detail=result["error"],
         )
 
-    logger.info(f"[IMAGE/GENERATE] Images generated: count={result['count']}, model={imageGenerateRequest.model} (token_usage not available for image generation)")
+    logger.info(
+        f"[IMAGE/GENERATE] Images generated: count={result['count']}, model={imageGenerateRequest.model} (token_usage not available for image generation)"
+    )
     return {
         "images": result["images"],
         "count": result["count"],
@@ -175,7 +214,9 @@ def generate_image_mock(
             detail=result["error"],
         )
 
-    logger.info(f"[IMAGE/GENERATE/MOCK] Images generated: count={result['count']}, model={imageGenerateRequest.model} (token_usage not available for image generation)")
+    logger.info(
+        f"[IMAGE/GENERATE/MOCK] Images generated: count={result['count']}, model={imageGenerateRequest.model} (token_usage not available for image generation)"
+    )
     return {
         "images": result["images"],
         "count": result["count"],
@@ -192,7 +233,9 @@ def generateMindmap(
     print("Received mindmap generation request:", mindmapGenerateRequest)
     result = svc.generate_mindmap(mindmapGenerateRequest)
     token_usage = svc.last_token_usage
-    logger.info(f"[MINDMAP/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}")
+    logger.info(
+        f"[MINDMAP/GENERATE] Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, total={token_usage.total_tokens}, model={token_usage.model}"
+    )
     return GenerateResponse(data=result, token_usage=token_usage)
 
 
@@ -204,3 +247,41 @@ def generateMindmap_Mock(
     print("Received mock mindmap generation request:", mindmapGenerateRequest)
     result, token_usage = svc.generate_mindmap_mock(mindmapGenerateRequest)
     return GenerateResponse(data=result, token_usage=token_usage)
+
+
+@router.post("/questions/generate", response_model=list[Question])
+def generate_questions(
+    request: GenerateQuestionsFromTopicRequest, svc: ExamServiceDep
+):
+    """
+    Generate questions based on topic and requirements.
+
+    This endpoint uses AI to create exam questions matching the Question entity schema.
+    """
+    logger.info(
+        f"[QUESTIONS/GENERATE] Received request for topic: {request.topic}, grade: {request.grade}"
+    )
+
+    try:
+        result = svc.generate_questions_from_topic(request)
+        logger.info(
+            f"[QUESTIONS/GENERATE] Successfully generated {len(result)} questions"
+        )
+        return result
+    except ValueError as e:
+        logger.error(f"[QUESTIONS/GENERATE] Validation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+    except FileNotFoundError as e:
+        logger.error(f"[QUESTIONS/GENERATE] File not found: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Prompt template not found: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"[QUESTIONS/GENERATE] Error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate questions: {str(e)}",
+        )

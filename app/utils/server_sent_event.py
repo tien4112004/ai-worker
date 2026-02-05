@@ -47,20 +47,22 @@ async def sse_word_by_word(
         if buffer:
             encoded = base64.b64encode(buffer.encode("utf-8")).decode("ascii")
             yield {"data": encoded}
-        
+
         # Send token usage as final event
         if token_usage:
             yield {
                 "data": base64.b64encode(
-                    json.dumps({
-                        "token_usage": {
-                            "input_tokens": token_usage.input_tokens,
-                            "output_tokens": token_usage.output_tokens,
-                            "total_tokens": token_usage.total_tokens,
-                            "model": token_usage.model,
-                            "provider": token_usage.provider,
+                    json.dumps(
+                        {
+                            "token_usage": {
+                                "input_tokens": token_usage.input_tokens,
+                                "output_tokens": token_usage.output_tokens,
+                                "total_tokens": token_usage.total_tokens,
+                                "model": token_usage.model,
+                                "provider": token_usage.provider,
+                            }
                         }
-                    }).encode("utf-8")
+                    ).encode("utf-8")
                 ).decode("ascii")
             }
 
@@ -149,7 +151,7 @@ async def sse_json_by_json(
                     else:
                         # Incomplete JSON object, wait for more data
                         break
-        
+
         # Send token usage as final event
         if token_usage:
             yield f"data: {json.dumps({'token_usage': {'input_tokens': token_usage.input_tokens, 'output_tokens': token_usage.output_tokens, 'total_tokens': token_usage.total_tokens, 'model': token_usage.model, 'provider': token_usage.provider}}, ensure_ascii=False)}\n\n"
