@@ -2,10 +2,7 @@ from typing import Any, Dict, Generator
 
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
-from app.prompts.subject_prompt_router import (
-    combine_system_prompts,
-    get_subject_prompt_key,
-)
+from app.prompts.subject_prompt_router import get_subject_grade_prompt_key
 from app.schemas.mindmap_content import MindmapGenerateRequest
 from app.schemas.slide_content import (
     OutlineGenerateRequest,
@@ -29,37 +26,49 @@ class ContentRagService:
     def _system(self, key: str, vars: Dict[str, Any] | None) -> str:
         return self.prompt_store.render(key, vars)
 
-    def _system_with_subject(
-        self, key: str, vars: Dict[str, Any] | None, subject_code: str | None
+    def _system_with_subject_grade(
+        self,
+        key: str,
+        vars: Dict[str, Any] | None,
+        subject_code: str | None,
+        grade: str | None,
     ) -> str:
-        """Render system prompt and optionally append subject-specific prompt.
+        """Render system prompt with subject-grade specific prompt injected via placeholder.
 
         Args:
             key: The base prompt key to render
             vars: Variables for template substitution
             subject_code: Optional subject code (e.g., 'T', 'TV', 'TA')
+            grade: Optional grade level (e.g., '1', '2', '3', '4', '5')
 
         Returns:
-            Combined system prompt with subject-specific guidance if applicable
+            System prompt with subject-grade prompt injected if applicable
         """
-        base_prompt = self.prompt_store.render(key, vars)
+        # Initialize vars dict if None
+        if vars is None:
+            vars = {}
+        else:
+            # Make a copy to avoid mutating the input
+            vars = vars.copy()
 
-        # Get subject-specific prompt if subject code is provided
-        subject_prompt_key = get_subject_prompt_key(subject_code)
-        if subject_prompt_key:
+        # Get subject-grade prompt if both subject and grade are provided
+        subject_grade_prompt = ""
+        subject_grade_key = get_subject_grade_prompt_key(subject_code, grade)
+        if subject_grade_key:
             try:
-                subject_prompt = self.prompt_store.render(
-                    subject_prompt_key, None
+                subject_grade_prompt = self.prompt_store.render(
+                    subject_grade_key, None
                 )
-                return combine_system_prompts(base_prompt, subject_prompt)
             except KeyError:
-                # If subject prompt not found, just use base prompt
                 print(
-                    f"[WARNING] Subject prompt key '{subject_prompt_key}' not found in registry"
+                    f"[WARNING] Subject-grade prompt key '{subject_grade_key}' not found in registry"
                 )
-                return base_prompt
 
-        return base_prompt
+        # Inject the subject-grade prompt into the template variables
+        vars["subject_grade_prompt"] = subject_grade_prompt
+
+        # Render the base template with the injected subject-grade prompt
+        return self.prompt_store.render(key, vars)
 
     @staticmethod
     def _check_content_mismatch(result: dict) -> None:
@@ -75,10 +84,11 @@ class ContentRagService:
         Returns:
             Dict: A dictionary containing the generated outline.
         """
-        sys_msg = self._system_with_subject(
+        sys_msg = self._system_with_subject_grade(
             "outline.system.rag",
             None,
             request.subject,
+            request.grade,
         )
 
         usr_msg = self._system(
@@ -120,10 +130,11 @@ class ContentRagService:
         return result["answer"]
 
     def make_presentation_with_rag(self, request: PresentationGenerateRequest):
-        sys_msg = self._system_with_subject(
+        sys_msg = self._system_with_subject_grade(
             "presentation.system.rag",
             None,
             request.subject,
+            request.grade,
         )
 
         usr_msg = self._system(
@@ -213,8 +224,8 @@ class ContentRagService:
     def make_outline_rag_stream(
         self, request: OutlineGenerateRequest
     ) -> Generator:
-        sys_msg = self._system_with_subject(
-            "outline.system.rag", None, request.subject
+        sys_msg = self._system_with_subject_grade(
+            "outline.system.rag", None, request.subject, request.grade
         )
         usr_msg = self._system("outline.user", request.to_dict())
 
@@ -238,8 +249,8 @@ class ContentRagService:
     def make_presentation_rag_stream(
         self, request: PresentationGenerateRequest
     ) -> Generator:
-        sys_msg = self._system_with_subject(
-            "presentation.system.rag", None, request.subject
+        sys_msg = self._system_with_subject_grade(
+            "presentation.system.rag", None, request.subject, request.grade
         )
         usr_msg = self._system("presentation.user", request.to_dict())
 
@@ -261,10 +272,11 @@ class ContentRagService:
         )
 
     def generate_mindmap_with_rag(self, request: MindmapGenerateRequest):
-        sys_msg = self._system_with_subject(
+        sys_msg = self._system_with_subject_grade(
             "mindmap.system.rag",
             request.to_dict(),
             request.subject,
+            request.grade,
         )
 
         usr_msg = self._system(
@@ -304,8 +316,11 @@ class ContentRagService:
     def generate_mindmap_rag_stream(
         self, request: MindmapGenerateRequest
     ) -> Generator:
-        sys_msg = self._system_with_subject(
-            "mindmap.system.rag", request.to_dict(), request.subject
+        sys_msg = self._system_with_subject_grade(
+            "mindmap.system.rag",
+            request.to_dict(),
+            request.subject,
+            request.grade,
         )
         usr_msg = self._system("mindmap.user", request.to_dict())
 

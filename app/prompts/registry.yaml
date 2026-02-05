@@ -53,12 +53,51 @@ prompts:
   question.context.user:
     path: "question/usr_prompt_context.st"
     format: "st"
-  subject.math:
-    path: 'subject/math_sys_prompt.st'
+  # Subject-grade specific prompts (Math)
+  subject_grade.math.1:
+    path: 'subject_grade/math/grade_1.st'
     format: 'st'
-  subject.literature:
-    path: 'subject/literature_sys_prompt.st'
+  subject_grade.math.2:
+    path: 'subject_grade/math/grade_2.st'
     format: 'st'
-  subject.english:
-    path: 'subject/english_sys_prompt.st'
+  subject_grade.math.3:
+    path: 'subject_grade/math/grade_3.st'
+    format: 'st'
+  subject_grade.math.4:
+    path: 'subject_grade/math/grade_4.st'
+    format: 'st'
+  subject_grade.math.5:
+    path: 'subject_grade/math/grade_5.st'
+    format: 'st'
+  # Subject-grade specific prompts (Literature)
+  subject_grade.literature.1:
+    path: 'subject_grade/literature/grade_1.st'
+    format: 'st'
+  subject_grade.literature.2:
+    path: 'subject_grade/literature/grade_2.st'
+    format: 'st'
+  subject_grade.literature.3:
+    path: 'subject_grade/literature/grade_3.st'
+    format: 'st'
+  subject_grade.literature.4:
+    path: 'subject_grade/literature/grade_4.st'
+    format: 'st'
+  subject_grade.literature.5:
+    path: 'subject_grade/literature/grade_5.st'
+    format: 'st'
+  # Subject-grade specific prompts (English)
+  subject_grade.english.1:
+    path: 'subject_grade/english/grade_1.st'
+    format: 'st'
+  subject_grade.english.2:
+    path: 'subject_grade/english/grade_2.st'
+    format: 'st'
+  subject_grade.english.3:
+    path: 'subject_grade/english/grade_3.st'
+    format: 'st'
+  subject_grade.english.4:
+    path: 'subject_grade/english/grade_4.st'
+    format: 'st'
+  subject_grade.english.5:
+    path: 'subject_grade/english/grade_5.st'
     format: 'st'
