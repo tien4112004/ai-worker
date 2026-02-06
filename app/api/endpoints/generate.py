@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
-from app.fastapi_depends import ContentServiceDep, ExamServiceDep
+from app.core.fastapi_depends import ContentServiceDep, ExamServiceDep
 from app.schemas.exam_content import (
     GenerateQuestionsFromTopicRequest,
     Question,

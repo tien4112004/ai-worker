@@ -9,6 +9,12 @@ from app.core.fastapi_depends import (
     ContentRagServiceDep,
     DocumentEmbeddingsRepositoryDep,
 )
+from app.schemas.exam_content import (
+    ExamMatrix,
+    GenerateMatrixRequest,
+    GenerateQuestionsFromTopicRequest,
+    Question,
+)
 from app.schemas.mindmap_content import MindmapGenerateRequest
 from app.schemas.slide_content import (
     OutlineGenerateRequest,
@@ -119,4 +125,81 @@ def generate_mindmap_rag_stream(
         chunks = svc.generate_mindmap_rag_stream(mindmapGenerateRequest)
     except ContentMismatchError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
     return EventSourceResponse(sse_word_by_word(request, chunks), ping=None)
+
+
+@router.post("/exams/matrix/generate", response_model=ExamMatrix)
+def generate_exam_matrix_with_rag(
+    request: GenerateMatrixRequest, svc: ContentRagServiceDep
+):
+    """
+    Generate a 3D exam matrix based on topics and prerequisites using RAG.
+    """
+    logger.info(
+        f"[EXAM/MATRIX/RAG/GENERATE] Received request for matrix: {request.name}"
+    )
+
+    try:
+        result = svc.generate_matrix_with_rag(request)
+        token_usage = svc.last_token_usage
+        logger.info(
+            f"[EXAM/MATRIX/RAG/GENERATE] Successfully generated matrix. "
+            f"Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, "
+            f"total={token_usage.total_tokens}, model={token_usage.model}"
+        )
+        return result
+    except ContentMismatchError as e:
+        logger.error(f"[EXAM/MATRIX/RAG/GENERATE] Content mismatch: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        logger.error(f"[EXAM/MATRIX/RAG/GENERATE] Validation error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"[EXAM/MATRIX/RAG/GENERATE] Error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate matrix: {str(e)}",
+        )
+
+
+@router.post("/questions/generate", response_model=list[Question])
+def generate_questions_with_rag(
+    request: GenerateQuestionsFromTopicRequest, svc: ContentRagServiceDep
+):
+    """
+    Generate questions based on topic and requirements using RAG.
+
+    This endpoint uses AI with RAG to create exam questions matching the Question entity schema.
+    """
+    logger.info(
+        f"[QUESTIONS/RAG/GENERATE] Received request for topic: {request.topic}, grade: {request.grade}"
+    )
+
+    try:
+        result = svc.generate_questions_with_rag(request)
+        token_usage = svc.last_token_usage
+        logger.info(
+            f"[QUESTIONS/RAG/GENERATE] Successfully generated {len(result)} questions. "
+            f"Token Usage: input={token_usage.input_tokens}, output={token_usage.output_tokens}, "
+            f"total={token_usage.total_tokens}, model={token_usage.model}"
+        )
+        return result
+    except ContentMismatchError as e:
+        logger.error(f"[QUESTIONS/RAG/GENERATE] Content mismatch: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        logger.error(f"[QUESTIONS/RAG/GENERATE] Validation error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except FileNotFoundError as e:
+        logger.error(f"[QUESTIONS/RAG/GENERATE] File not found: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Prompt template not found: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"[QUESTIONS/RAG/GENERATE] Error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate questions: {str(e)}",
+        )

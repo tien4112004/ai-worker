@@ -39,20 +39,26 @@ prompts:
     path: 'exam/questions_sys_prompt.st'
     format: 'st'
   exam.questions.user:
-    path: "exam/questions_usr_prompt.st"
-    format: "st"
+    path: 'exam/questions_usr_prompt.st'
+    format: 'st'
+  exam.matrix.system.rag:
+    path: 'exam/matrix_sys_prompt_rag.st'
+    format: 'st'
   question.system:
-    path: "question/sys_prompt.st"
-    format: "st"
+    path: 'question/sys_prompt.st'
+    format: 'st'
+  question.system.rag:
+    path: 'question/sys_prompt_rag.st'
+    format: 'st'
   question.user:
-    path: "question/usr_prompt.st"
-    format: "st"
+    path: 'question/usr_prompt.st'
+    format: 'st'
   question.context.system:
-    path: "question/sys_prompt_context.st"
-    format: "st"
+    path: 'question/sys_prompt_context.st'
+    format: 'st'
   question.context.user:
-    path: "question/usr_prompt_context.st"
-    format: "st"
+    path: 'question/usr_prompt_context.st'
+    format: 'st'
   # Subject-grade specific prompts (Math)
   subject_grade.math.1:
     path: 'subject_grade/math/grade_1.st'
