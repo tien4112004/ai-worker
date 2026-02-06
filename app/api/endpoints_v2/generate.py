@@ -8,6 +8,9 @@ from sse_starlette.sse import EventSourceResponse
 from app.core.fastapi_depends import (
     ContentRagServiceDep,
     DocumentEmbeddingsRepositoryDep,
+    ExamRagServiceDep,
+    MindmapRagServiceDep,
+    SlideRagServiceDep,
 )
 from app.schemas.exam_content import (
     ExamMatrix,
@@ -21,7 +24,7 @@ from app.schemas.slide_content import (
     PresentationGenerateRequest,
 )
 from app.schemas.token_usage import TokenUsage
-from app.services.content_rag_service import ContentMismatchError
+from app.services.base_rag_service import ContentMismatchError
 from app.utils.server_sent_event import sse_json_by_json, sse_word_by_word
 
 logger = logging.getLogger(__name__)
@@ -39,7 +42,7 @@ router = APIRouter(tags=["generate"])
 
 @router.post("/outline/generate")
 def generate_outline_with_rag(
-    outlineGenerateRequest: OutlineGenerateRequest, svc: ContentRagServiceDep
+    outlineGenerateRequest: OutlineGenerateRequest, svc: SlideRagServiceDep
 ):
     try:
         result = svc.make_outline_with_rag(outlineGenerateRequest)
@@ -61,7 +64,7 @@ class QueryRequest(BaseModel):
 @router.post("/presentations/generate")
 def generate_presentation_with_rag(
     presentationGenerateRequest: PresentationGenerateRequest,
-    svc: ContentRagServiceDep,
+    svc: SlideRagServiceDep,
 ):
     try:
         result = svc.make_presentation_with_rag(presentationGenerateRequest)
@@ -76,7 +79,7 @@ def generate_presentation_with_rag(
 
 @router.post("/mindmap/generate")
 def generate_mindmap_with_rag(
-    mindmapGenerateRequest: MindmapGenerateRequest, svc: ContentRagServiceDep
+    mindmapGenerateRequest: MindmapGenerateRequest, svc: MindmapRagServiceDep
 ):
     try:
         result = svc.generate_mindmap_with_rag(mindmapGenerateRequest)
@@ -93,7 +96,7 @@ def generate_mindmap_with_rag(
 def generate_outline_rag_stream(
     request: Request,
     outlineGenerateRequest: OutlineGenerateRequest,
-    svc: ContentRagServiceDep,
+    svc: SlideRagServiceDep,
 ):
     try:
         chunks = svc.make_outline_rag_stream(outlineGenerateRequest)
@@ -106,7 +109,7 @@ def generate_outline_rag_stream(
 def generate_presentation_rag_stream(
     request: Request,
     presentationGenerateRequest: PresentationGenerateRequest,
-    svc: ContentRagServiceDep,
+    svc: SlideRagServiceDep,
 ):
     try:
         chunks = svc.make_presentation_rag_stream(presentationGenerateRequest)
@@ -119,7 +122,7 @@ def generate_presentation_rag_stream(
 def generate_mindmap_rag_stream(
     request: Request,
     mindmapGenerateRequest: MindmapGenerateRequest,
-    svc: ContentRagServiceDep,
+    svc: MindmapRagServiceDep,
 ):
     try:
         chunks = svc.generate_mindmap_rag_stream(mindmapGenerateRequest)
@@ -131,7 +134,7 @@ def generate_mindmap_rag_stream(
 
 @router.post("/exams/matrix/generate", response_model=ExamMatrix)
 def generate_exam_matrix_with_rag(
-    request: GenerateMatrixRequest, svc: ContentRagServiceDep
+    request: GenerateMatrixRequest, svc: ExamRagServiceDep
 ):
     """
     Generate a 3D exam matrix based on topics and prerequisites using RAG.
@@ -165,7 +168,7 @@ def generate_exam_matrix_with_rag(
 
 @router.post("/questions/generate", response_model=list[Question])
 def generate_questions_with_rag(
-    request: GenerateQuestionsFromTopicRequest, svc: ContentRagServiceDep
+    request: GenerateQuestionsFromTopicRequest, svc: ExamRagServiceDep
 ):
     """
     Generate questions based on topic and requirements using RAG.

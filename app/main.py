@@ -18,7 +18,10 @@ from app.repositories.document_embeddings_repository import (
 )
 from app.services.content_rag_service import ContentRagService
 from app.services.content_service import ContentService
+from app.services.exam_rag_service import ExamRagService
 from app.services.exam_service import ExamService
+from app.services.mindmap_rag_service import MindmapRagService
+from app.services.slide_rag_service import SlideRagService
 
 
 @asynccontextmanager
@@ -58,9 +61,26 @@ async def lifespan(app: FastAPI):
         prompt_store=prompt_store,
     )
 
+    # Initialize specialized RAG services
+    slide_rag_service = SlideRagService(
+        llm_executor=llm_executor,
+        prompt_store=prompt_store,
+    )
+    mindmap_rag_service = MindmapRagService(
+        llm_executor=llm_executor,
+        prompt_store=prompt_store,
+    )
+    exam_rag_service = ExamRagService(
+        llm_executor=llm_executor,
+        prompt_store=prompt_store,
+    )
+
     app.state.settings = settings
     app.state.content_service = content_service
     app.state.content_rag_service = content_rag_service
+    app.state.slide_rag_service = slide_rag_service
+    app.state.mindmap_rag_service = mindmap_rag_service
+    app.state.exam_rag_service = exam_rag_service
     app.state.exam_service = exam_service
     app.state.document_embeddings_repository = document_embeddings_repository
     app.state.container = container
@@ -103,10 +123,10 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api, prefix="/api")
-    
+
     # Add custom trace ID middleware (must be before CORS)
     app.middleware("http")(injectCustomTraceId)
-    
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
