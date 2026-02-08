@@ -19,9 +19,10 @@ ${chapters}
 
 The matrix is a 3-dimensional array indexed as: `matrix[subtopic_index][difficulty_index][question_type_index]`
 
-Each cell contains:
-- **count**: Number of questions for this combination
-- **points**: Total points allocated for this combination
+Each cell is a string in the format: `"count:points"`
+- **count**: Number of questions for this combination (integer)
+- **points**: Total points allocated for this combination (number)
+- Example: `"2:4"` means 2 questions worth 4 points total
 
 ### Dimensions
 
@@ -91,62 +92,62 @@ Return ONLY a valid JSON object with this exact structure:
   "matrix": [
     [
       [
-        {"count": 2, "points": 4},
-        {"count": 1, "points": 2},
-        {"count": 1, "points": 2},
-        {"count": 0, "points": 0}
+        "2:4",
+        "1:2",
+        "1:2",
+        "0:0"
       ],
       [
-        {"count": 1, "points": 3},
-        {"count": 1, "points": 3},
-        {"count": 0, "points": 0},
-        {"count": 1, "points": 4}
+        "1:3",
+        "1:3",
+        "0:0",
+        "1:4"
       ],
       [
-        {"count": 0, "points": 0},
-        {"count": 1, "points": 5},
-        {"count": 0, "points": 0},
-        {"count": 0, "points": 0}
+        "0:0",
+        "1:5",
+        "0:0",
+        "0:0"
       ]
     ],
     [
       [
-        {"count": 1, "points": 2},
-        {"count": 1, "points": 2},
-        {"count": 0, "points": 0},
-        {"count": 0, "points": 0}
+        "1:2",
+        "1:2",
+        "0:0",
+        "0:0"
       ],
       [
-        {"count": 1, "points": 3},
-        {"count": 0, "points": 0},
-        {"count": 1, "points": 3},
-        {"count": 0, "points": 0}
+        "1:3",
+        "0:0",
+        "1:3",
+        "0:0"
       ],
       [
-        {"count": 0, "points": 0},
-        {"count": 0, "points": 0},
-        {"count": 1, "points": 5},
-        {"count": 0, "points": 0}
+        "0:0",
+        "0:0",
+        "1:5",
+        "0:0"
       ]
     ],
     [
       [
-        {"count": 1, "points": 2},
-        {"count": 1, "points": 2},
-        {"count": 1, "points": 2},
-        {"count": 0, "points": 0}
+        "1:2",
+        "1:2",
+        "1:2",
+        "0:0"
       ],
       [
-        {"count": 1, "points": 3},
-        {"count": 1, "points": 3},
-        {"count": 0, "points": 0},
-        {"count": 0, "points": 0}
+        "1:3",
+        "1:3",
+        "0:0",
+        "0:0"
       ],
       [
-        {"count": 0, "points": 0},
-        {"count": 1, "points": 5},
-        {"count": 0, "points": 0},
-        {"count": 0, "points": 0}
+        "0:0",
+        "1:5",
+        "0:0",
+        "0:0"
       ]
     ]
   ]
