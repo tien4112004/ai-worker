@@ -3,7 +3,7 @@ pipeline {
 
     // Environment variables
     environment {
-        GITHUB_REPO = 'tien4112004/ai-worker'
+        GITHUB_REPO = 'tien4112004/genai-gateway'
         GITHUB_USERNAME = 'tien4112004'  // GHCR
         DOCKER_REGISTRY = 'ghcr.io'
         IMAGE_NAME = "${DOCKER_REGISTRY}/${GITHUB_REPO}"
