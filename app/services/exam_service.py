@@ -12,6 +12,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.schemas.exam_content import (
+    DimensionSubtopic,
     DimensionTopic,
     ExamMatrix,
     GenerateMatrixRequest,
@@ -48,16 +49,16 @@ class ExamService:
         """
         Generate an exam matrix using LLM.
 
-        The matrix is indexed as: matrix[topic_index][difficulty_index][question_type_index]
+        The matrix is indexed as: matrix[subtopic_index][difficulty_index][question_type_index]
         Each cell contains {count, points} for that combination.
 
         Args:
-            request: Request containing exam requirements with topics list
+            request: Request containing exam requirements and chapters (fetched by backend)
 
         Returns:
             ExamMatrix object representing the exam structure
         """
-        # Prepare prompt variables
+        # Prepare prompt variables (chapters already formatted in to_dict())
         prompt_vars = request.to_dict()
         prompt_vars["difficulties"] = request.difficulties or [
             "KNOWLEDGE",
@@ -102,13 +103,23 @@ class ExamService:
 
             # Parse dimensions
             dims_data = matrix_data.get("dimensions", {})
-            topics = [
-                DimensionTopic(
-                    id=t.get("id", str(uuid.uuid4())),
-                    name=t.get("name", "Unknown"),
+
+            # Parse topics with subtopics structure
+            topics = []
+            for t in dims_data.get("topics", []):
+                subtopics = [
+                    DimensionSubtopic(
+                        id=st.get("id", str(uuid.uuid4())),
+                        name=st.get("name", "Unknown Subtopic"),
+                    )
+                    for st in t.get("subtopics", [])
+                ]
+                topics.append(
+                    DimensionTopic(
+                        name=t.get("name", "Unknown Topic"),
+                        subtopics=subtopics,
+                    )
                 )
-                for t in dims_data.get("topics", [])
-            ]
 
             dimensions = MatrixDimensions(
                 topics=topics,
@@ -128,11 +139,12 @@ class ExamService:
             )
 
             # Parse matrix - convert to "count:points" string format
+            # Matrix is now indexed by subtopic (flattened from all topics)
             raw_matrix = matrix_data.get("matrix", [])
             parsed_matrix = []
-            for topic_row in raw_matrix:
+            for subtopic_row in raw_matrix:  # Each subtopic
                 diff_rows = []
-                for diff_row in topic_row:
+                for diff_row in subtopic_row:
                     qtype_cells = []
                     for cell in diff_row:
                         if isinstance(cell, str):
