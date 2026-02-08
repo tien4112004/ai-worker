@@ -63,18 +63,34 @@ class MatrixCell(BaseModel):
         return cls(count=int(parts[0]), points=float(parts[1]))
 
 
-class DimensionTopic(BaseModel):
-    """Topic dimension item in the matrix."""
+class DimensionSubtopic(BaseModel):
+    """Subtopic dimension item in the matrix."""
 
-    id: str = Field(..., description="Unique identifier for the topic")
-    name: str = Field(..., description="Display name of the topic")
+    id: str = Field(..., description="Unique identifier for the subtopic")
+    name: str = Field(..., description="Display name of the subtopic")
+
+
+class DimensionTopic(BaseModel):
+    """Topic as organizational container for subtopics."""
+
+    name: str = Field(
+        ..., description="Display name of the topic (no ID needed)"
+    )
+    subtopics: List[DimensionSubtopic] = Field(
+        ..., description="List of subtopics under this topic"
+    )
 
 
 class MatrixDimensions(BaseModel):
-    """Dimensions of the 3D exam matrix."""
+    """Dimensions of the 3D exam matrix.
+
+    Matrix is indexed by: matrix[subtopic_index][difficulty_index][question_type_index]
+    Topics serve as organizational containers; subtopics are the actual first dimension.
+    """
 
     topics: List[DimensionTopic] = Field(
-        ..., description="List of topics (first dimension)"
+        ...,
+        description="List of topics with their subtopics (organizational hierarchy)",
     )
     difficulties: List[str] = Field(
         default=["KNOWLEDGE", "COMPREHENSION", "APPLICATION"],
@@ -130,8 +146,8 @@ class ExamMatrix(BaseModel):
     def get_total_questions(self) -> int:
         """Calculate total questions across all cells."""
         total = 0
-        for topic_row in self.matrix:
-            for diff_row in topic_row:
+        for subtopic_row in self.matrix:  # Each subtopic
+            for diff_row in subtopic_row:
                 for cell_str in diff_row:
                     count, _ = cell_str.split(":")
                     total += int(count)
@@ -140,28 +156,41 @@ class ExamMatrix(BaseModel):
     def get_total_points(self) -> float:
         """Calculate total points across all cells."""
         total = 0.0
-        for topic_row in self.matrix:
-            for diff_row in topic_row:
+        for subtopic_row in self.matrix:  # Each subtopic
+            for diff_row in subtopic_row:
                 for cell_str in diff_row:
                     _, points = cell_str.split(":")
                     total += float(points)
         return total
 
     def get_cell(
-        self, topic_idx: int, difficulty_idx: int, qtype_idx: int
+        self, subtopic_idx: int, difficulty_idx: int, qtype_idx: int
     ) -> str:
         """Get a specific cell from the matrix as 'count:points' string."""
-        return self.matrix[topic_idx][difficulty_idx][qtype_idx]
+        return self.matrix[subtopic_idx][difficulty_idx][qtype_idx]
+
+
+class TopicInput(BaseModel):
+    """Topic with subtopics for matrix generation request."""
+
+    name: str = Field(..., description="Topic name (organizational container)")
+    subtopics: List[str] = Field(
+        ...,
+        min_length=1,
+        description="List of subtopic names under this topic",
+    )
 
 
 class GenerateMatrixRequest(BaseModel):
     """Request to generate a 3D exam matrix using AI."""
 
     name: str = Field(..., description="Name for the exam matrix")
-    topics: List[str] = Field(
-        ..., min_length=1, description="List of topic names to include"
+    chapters: List[str] = Field(
+        ...,
+        min_length=1,
+        description="List of curriculum chapters (fetched by backend based on grade/subject)",
     )
-    gradeLevel: str = Field(..., description="Grade", alias="grade")
+    grade: str = Field(..., description="Grade level", alias="grade_level")
     subject: str = Field(..., description="Subject code (T, TV, TA)")
     totalQuestions: int = Field(
         ...,
@@ -186,6 +215,10 @@ class GenerateMatrixRequest(BaseModel):
         description="Additional requirements or context for the exam",
         alias="additional_requirements",
     )
+    language: str = Field(
+        default="vi",
+        description="Language for AI responses (vi for Vietnamese, en for English)",
+    )
     provider: str = Field(default="gemini", description="LLM provider")
     model: str = Field(
         default="gemini-2.5-flash", description="LLM model to use"
@@ -198,8 +231,7 @@ class GenerateMatrixRequest(BaseModel):
         """Convert to dictionary for prompt rendering."""
         return {
             "name": self.name,
-            "topics": ", ".join(self.topics),
-            "topics_list": self.topics,
+            "chapters": "\n".join([f"- {ch}" for ch in self.chapters]),
             "grade": self.grade,
             "subject": self.subject,
             "total_questions": self.totalQuestions,
@@ -215,6 +247,7 @@ class GenerateMatrixRequest(BaseModel):
                 else "MULTIPLE_CHOICE, FILL_IN_BLANK, MATCHING, OPEN_ENDED"
             ),
             "additional_requirements": self.additionalRequirements or "",
+            "language": self.language,
         }
 
 
