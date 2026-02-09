@@ -27,17 +27,6 @@ C) Ice cream
 Correct: B
 ```
 
-**TRUE_FALSE:**
-- State clearly and unambiguously
-- Avoid absolutes like "always" or "never" unless truly absolute
-- Test important concepts, not trivial details
-Example (Grade 1):
-```
-Question: The sun rises in the east.
-Correct: true
-Explanation: The sun always rises in the east and sets in the west.
-```
-
 **FILL_IN_BLANK:**
 - Place blank strategically (usually at or near the end)
 - Context should clearly indicate the answer
@@ -128,7 +117,7 @@ Return ONLY a valid JSON array. Each item in the array represents questions for 
   } or null,
   "questions": [
     {
-      "question_type": "MULTIPLE_CHOICE|TRUE_FALSE|FILL_IN_BLANK|OPEN_ENDED|MATCHING",
+      "question_type": "MULTIPLE_CHOICE|FILL_IN_BLANK|OPEN_ENDED|MATCHING",
       "topic": "string",
       "grade": "1|2|3|4|5",
       "difficulty": "KNOWLEDGE|COMPREHENSION|APPLICATION|ADVANCED_APPLICATION",

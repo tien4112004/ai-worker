@@ -68,7 +68,7 @@ class ExamService:
         prompt_vars["question_types"] = request.questionTypes or [
             "MULTIPLE_CHOICE",
             "FILL_IN_BLANK",
-            "TRUE_FALSE",
+            "OPEN_ENDED",
             "MATCHING",
         ]
 
@@ -132,7 +132,7 @@ class ExamService:
                     [
                         "MULTIPLE_CHOICE",
                         "FILL_IN_BLANK",
-                        "TRUE_FALSE",
+                        "OPEN_ENDED",
                         "MATCHING",
                     ],
                 ),
@@ -364,8 +364,8 @@ class ExamService:
 
         # Format additional requirements
         additional_req = ""
-        if request.additional_requirements:
-            additional_req = f"\n**Additional Requirements**: {request.additional_requirements}"
+        if request.prompt:
+            additional_req = f"\n**Additional Requirements**: {request.prompt}"
 
         # Build prompt variables
         prompt_vars = {
@@ -375,7 +375,7 @@ class ExamService:
             "total_questions": total_questions,
             "difficulty_distribution": difficulty_distribution,
             "question_types": question_types_str,
-            "additional_requirements": additional_req,
+            "prompt": additional_req,
         }
 
         # Render prompts
@@ -490,8 +490,8 @@ class ExamService:
 
         # Format additional requirements
         additional_req = ""
-        if request.additional_requirements:
-            additional_req = f"\n**Additional Requirements**: {request.additional_requirements}"
+        if request.prompt:
+            additional_req = f"\n**Additional Requirements**: {request.prompt}"
 
         # Build prompt variables
         prompt_vars = {
@@ -502,7 +502,7 @@ class ExamService:
             "total_questions": total_questions,
             "difficulty_distribution": difficulty_distribution,
             "question_types": question_types_str,
-            "additional_requirements": additional_req,
+            "prompt": additional_req,
         }
 
         # Render prompt text

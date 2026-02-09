@@ -13,6 +13,8 @@ Generate a 3D exam matrix based on the curriculum chapters provided below for th
 **Available Curriculum Chapters:**
 ${chapters}
 
+**Important Chapter Format**: Each chapter is provided in the format `"chapter_id|chapter_name"`. When creating subtopics from chapters, you MUST extract and use the chapter_id as the subtopic ID.
+
 **Important**: You must organize these chapters into logical topics and subtopics, then generate the matrix accordingly. Group related chapters under appropriate topic names.
 
 ### Matrix Structure
@@ -29,9 +31,11 @@ Each cell is a string in the format: `"count:points"`
 **Topics and Subtopics** (First Dimension):
 Topics serve as organizational containers. Each topic has multiple subtopics, and SUBTOPICS are the actual first dimension of the matrix.
 - Each topic groups related subtopics together (e.g., "Algebra" contains "Linear Equations", "Quadratic Equations")
-- Topics do NOT have IDs (they are for organization only)
-- Subtopics DO have IDs (they are the actual matrix dimension)
+- Topics do not have IDs (backend will add them)
+- Subtopics MUST use the chapter IDs extracted from the provided chapters (the part before the | symbol)
 - Matrix rows correspond to subtopics (flattened across all topics)
+
+**Example**: If given chapters ["ch-101|Algebra Basics", "ch-102|Geometry Intro"], use "ch-101" and "ch-102" as subtopic IDs.
 
 **Difficulties** (Second Dimension):
 ${difficulties}
@@ -49,13 +53,13 @@ ${question_types}
 3. **Question Type Variety**: Use a mix of question types appropriate for each subtopic
    - MULTIPLE_CHOICE: Good for all difficulty levels
    - FILL_IN_BLANK: Good for recall and comprehension
-   - TRUE_FALSE: Good for quick concept checks
+  - OPEN_ENDED (short-answer): Good for quick concept checks
    - MATCHING: Good for relationships and associations
 
 ### Grade Level Considerations
 
 Adjust the distribution based on grade level:
-- **Lower grades (k-2)**: More MULTIPLE_CHOICE, TRUE_FALSE; fewer OPEN_ENDED
+-- **Lower grades (k-2)**: More MULTIPLE_CHOICE; fewer OPEN_ENDED
 - **Middle grades (3-5)**: Balanced mix of all types
 - **Higher grades (6+)**: Can include more complex question types
 
@@ -75,14 +79,14 @@ Return ONLY a valid JSON object with this exact structure:
       {
         "name": "Topic Name 1",
         "subtopics": [
-          {"id": "subtopic-1-1", "name": "Subtopic 1.1"},
-          {"id": "subtopic-1-2", "name": "Subtopic 1.2"}
+          {"id": "ch-101", "name": "Subtopic 1.1"},
+          {"id": "ch-102", "name": "Subtopic 1.2"}
         ]
       },
       {
         "name": "Topic Name 2",
         "subtopics": [
-          {"id": "subtopic-2-1", "name": "Subtopic 2.1"}
+          {"id": "ch-103", "name": "Subtopic 2.1"}
         ]
       }
     ],
@@ -162,7 +166,8 @@ Return ONLY a valid JSON object with this exact structure:
 2. Total points MUST equal the requested total_points (${total_points})
 3. Every subtopic MUST have at least some questions
 4. Matrix dimensions MUST match: [num_subtopics][num_difficulties][num_question_types]
-5. Generate valid UUIDs for subtopic IDs (NOT for topics - topics have no IDs)
-6. Return ONLY valid JSON, no explanatory text before or after
-7. Points should be distributed proportionally (harder questions = more points)
-8. Number of matrix rows = total number of subtopics across all topics
+5. Topics do not need IDs (backend will add them)
+6. Subtopics MUST use chapter IDs extracted from the provided chapters (part before | symbol)
+7. Return ONLY valid JSON, no explanatory text before or after
+8. Points should be distributed proportionally (harder questions = more points)
+9. Number of matrix rows = total number of subtopics across all topics

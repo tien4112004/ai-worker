@@ -13,8 +13,8 @@ ${difficulties}
 **Question Types to Use:**
 ${question_types}
 
-**Additional Requirements:**
-${additional_requirements}
+**User prompt:**
+${prompt}
 
 **Instructions:**
 Using the curriculum chapters provided in the system prompt:
@@ -25,12 +25,10 @@ Using the curriculum chapters provided in the system prompt:
 5. Use a variety of question types suitable for each subtopic
 6. Ensure total questions = ${total_questions}
 7. Ensure total points = ${total_points}
-8. Generate unique subtopic IDs (NOT topic IDs - topics are organizational only)
-9. Consider the additional requirements when planning the distribution
+8. Consider the user prompt to give the answer that match user requirements.
 
 Remember:
 - Return ONLY a valid JSON object matching the specified structure
 - No explanatory text before or after the JSON
-- Generate unique UUIDs for subtopic IDs
 - Topics serve as containers; subtopics are the actual dimension
 - Matrix has [num_subtopics][num_difficulties][num_question_types] structure

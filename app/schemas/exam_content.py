@@ -73,9 +73,7 @@ class DimensionSubtopic(BaseModel):
 class DimensionTopic(BaseModel):
     """Topic as organizational container for subtopics."""
 
-    name: str = Field(
-        ..., description="Display name of the topic (no ID needed)"
-    )
+    name: str = Field(..., description="Display name of the topic")
     subtopics: List[DimensionSubtopic] = Field(
         ..., description="List of subtopics under this topic"
     )
@@ -206,14 +204,14 @@ class GenerateMatrixRequest(BaseModel):
         description="Difficulty levels to include",
     )
     questionTypes: Optional[List[str]] = Field(
-        default=["MULTIPLE_CHOICE", "FILL_IN_BLANK", "TRUE_FALSE", "MATCHING"],
+        default=["MULTIPLE_CHOICE", "FILL_IN_BLANK", "OPEN_ENDED", "MATCHING"],
         description="Question types to include",
         alias="question_types",
     )
-    additionalRequirements: Optional[str] = Field(
+    prompt: Optional[str] = Field(
         None,
         description="Additional requirements or context for the exam",
-        alias="additional_requirements",
+        alias="prompt",
     )
     language: str = Field(
         default="vi",
@@ -246,7 +244,7 @@ class GenerateMatrixRequest(BaseModel):
                 if self.questionTypes
                 else "MULTIPLE_CHOICE, FILL_IN_BLANK, MATCHING, OPEN_ENDED"
             ),
-            "additional_requirements": self.additionalRequirements or "",
+            "prompt": self.prompt or "",
             "language": self.language,
         }
 
@@ -257,7 +255,6 @@ class MatrixItem(BaseModel):
     topic: str = Field(..., description="Topic or subtopic for questions")
     question_type: Literal[
         "MULTIPLE_CHOICE",
-        "TRUE_FALSE",
         "FILL_IN_BLANK",
         "OPEN_ENDED",
         "MATCHING",
@@ -455,7 +452,7 @@ class GenerateQuestionsFromTopicRequest(BaseModel):
         Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
     ] = Field(..., description="Types of questions to generate")
 
-    additional_requirements: Optional[str] = Field(
+    prompt: Optional[str] = Field(
         None,
         description="Additional requirements or context for question generation",
     )
@@ -497,7 +494,7 @@ class GenerateQuestionsFromContextRequest(BaseModel):
         Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
     ] = Field(..., description="Types of questions to generate")
 
-    additional_requirements: Optional[str] = Field(
+    prompt: Optional[str] = Field(
         None,
         description="Additional requirements or context for question generation",
     )
