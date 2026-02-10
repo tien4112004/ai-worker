@@ -90,10 +90,12 @@ class BaseRagService:
         Raises:
             ContentMismatchError: If the result indicates content mismatch
         """
-        answer = result.get("answer", "").strip()
-        if answer.startswith("CONTENT_MISMATCH:"):
-            message = answer[len("CONTENT_MISMATCH:") :].strip()
-            raise ContentMismatchError(message)
+        answer = result.get("answer", "")
+        if isinstance(answer, str):
+            answer = answer.strip()
+            if answer.startswith("CONTENT_MISMATCH:"):
+                message = answer[len("CONTENT_MISMATCH:") :].strip()
+                raise ContentMismatchError(message)
 
     def _checked_rag_stream(
         self,

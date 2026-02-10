@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, Optional
 
@@ -6,8 +7,6 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.fastapi_depends import (
-    ContentRagServiceDep,
-    DocumentEmbeddingsRepositoryDep,
     ExamRagServiceDep,
     MindmapRagServiceDep,
     SlideRagServiceDep,
@@ -116,20 +115,6 @@ def generate_presentation_rag_stream(
     except ContentMismatchError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return EventSourceResponse(sse_json_by_json(request, chunks), ping=None)
-
-
-@router.post("/mindmap/generate/stream")
-def generate_mindmap_rag_stream(
-    request: Request,
-    mindmapGenerateRequest: MindmapGenerateRequest,
-    svc: MindmapRagServiceDep,
-):
-    try:
-        chunks = svc.generate_mindmap_rag_stream(mindmapGenerateRequest)
-    except ContentMismatchError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    return EventSourceResponse(sse_word_by_word(request, chunks), ping=None)
 
 
 @router.post("/exams/matrix/generate", response_model=ExamMatrix)

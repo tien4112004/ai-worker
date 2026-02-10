@@ -65,8 +65,26 @@ class RAGAdapterMixin:
             messages = response.get("messages", [])
             final_message = messages[-1] if messages else None
 
+            # Ensure content is always a string
+            content = ""
+            if final_message:
+                if isinstance(final_message.content, str):
+                    content = final_message.content
+                elif isinstance(final_message.content, list):
+                    # Handle structured content (list of blocks)
+                    content = "".join(
+                        (
+                            block.get("text", str(block))
+                            if isinstance(block, dict)
+                            else str(block)
+                        )
+                        for block in final_message.content
+                    )
+                else:
+                    content = str(final_message.content)
+
             result = {
-                "answer": final_message.content if final_message else "",
+                "answer": content,
                 "query": query,
             }
 

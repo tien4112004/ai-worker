@@ -79,6 +79,7 @@ class Settings(BaseSettings):
         "PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces"
     )
     phoenix_project_name: str = os.getenv("PHOENIX_PROJECT_NAME", "")
+    phoenix_api_key: str = os.getenv("PHOENIX_API_KEY", "")
 
 
 logging.basicConfig(

@@ -15,8 +15,8 @@ class MindmapGenerateRequest(BaseModel):
     )
     provider: str
     model: str
-    grade: Optional[str] = Field(
-        None, max_length=50, description="The grade level for the content"
+    grade: Optional[int] = Field(
+        None, description="The grade level for the content"
     )
     subject: Optional[str] = Field(
         None, max_length=100, description="The subject area for the content"
