@@ -31,7 +31,6 @@ You must return a JSON array of Question objects. Each Question follows this str
   "type": "MULTIPLE_CHOICE",
   "title": "What is 2 + 2?",
   "data": {
-    "type": "MULTIPLE_CHOICE",
     "options": [
       {
         "text": "3",
@@ -62,7 +61,6 @@ You must return a JSON array of Question objects. Each Question follows this str
 - Exactly 4 options
 - One correct answer (isCorrect: true)
 - Text-based options (imageUrl can be null)
-- data object MUST include "type" field
 
 ### 2. FILL_IN_BLANK
 ```json
@@ -70,13 +68,12 @@ You must return a JSON array of Question objects. Each Question follows this str
   "type": "FILL_IN_BLANK",
   "title": "Complete the sentence",
   "data": {
-    "type": "FILL_IN_BLANK",
     "data": "The capital of Vietnam is {{Hà Nội|Ha Noi|Hanoi}}."
   }
 }
 ```
 **Requirements:**
-- `data` field is an object with `type` and `data` fields
+- `data` field is an object with a `data` field (nested structure)
 - The nested `data` field contains the raw text with blank placeholders
 - Use double braces `{{}}` to mark blanks
 - Inside braces, list acceptable answers separated by pipe `|`
@@ -91,7 +88,6 @@ You must return a JSON array of Question objects. Each Question follows this str
   "type": "matching",
   "title": "Match the items",
   "data": {
-    "type": "MATCHING",
     "pairs": [
       {
         "left": "Cat",
@@ -126,7 +122,6 @@ You must return a JSON array of Question objects. Each Question follows this str
 - 4-6 pairs
 - Each pair has left and right items
 - imageUrl fields can be null
-- data object MUST include "type" field
 
 ### 4. OPEN_ENDED
 ```json
@@ -134,7 +129,6 @@ You must return a JSON array of Question objects. Each Question follows this str
   "type": "open_ended",
   "title": "Describe your favorite animal",
   "data": {
-    "type": "OPEN_ENDED",
     "expectedAnswer": "Sample answer describing an animal with its characteristics...",
     "maxLength": 500
   }
@@ -143,7 +137,6 @@ You must return a JSON array of Question objects. Each Question follows this str
 **Requirements:**
 - expectedAnswer provides sample/key points
 - maxLength limits student response
-- data object MUST include "type" field
 
 ## Difficulty Levels
 
