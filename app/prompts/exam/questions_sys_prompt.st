@@ -28,13 +28,15 @@ Correct: B
 ```
 
 **FILL_IN_BLANK:**
-- Place blank strategically (usually at or near the end)
+- Use the format: {{correct answer 1|correct answer 2|alternative}} for multiple acceptable answers
+- Place blanks strategically in the sentence where they make sense
 - Context should clearly indicate the answer
 - Accept reasonable variations in spelling for younger grades
+- Use double braces {{}} with pipe-separated alternatives for multiple correct answers
 Example (Grade 3):
 ```
-Question: The process by which plants make their own food is called ____.
-Correct: photosynthesis
+Question: The process by which plants make their own food is called {{photosynthesis}}.
+Question: The {{cat|kitten}} is sleeping on the mat.
 ```
 
 **OPEN_ENDED:**

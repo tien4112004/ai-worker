@@ -67,35 +67,23 @@ You must return a JSON array of Question objects. Each Question follows this str
 ### 2. FILL_IN_BLANK
 ```json
 {
-  "type": "fill_in_blank",
+  "type": "FILL_IN_BLANK",
   "title": "Complete the sentence",
   "data": {
     "type": "FILL_IN_BLANK",
-    "segments": [
-      {
-        "type": "TEXT",
-        "content": "The capital of Vietnam is "
-      },
-      {
-        "type": "BLANK",
-        "content": "",
-        "acceptableAnswers": ["Hà Nội", "Ha Noi", "Hanoi"]
-      },
-      {
-        "type": "TEXT",
-        "content": "."
-      }
-    ],
-    "caseSensitive": false
+    "data": "The capital of Vietnam is {{Hà Nội|Ha Noi|Hanoi}}."
   }
 }
 ```
 **Requirements:**
-- Segments alternate between TEXT and BLANK
-- BLANK segments have empty content but acceptableAnswers array
-- Multiple acceptable answers for flexibility
-- caseSensitive: false for Vietnamese (case variations)
-- data object MUST include "type" field
+- `data` field is an object with `type` and `data` fields
+- The nested `data` field contains the raw text with blank placeholders
+- Use double braces `{{}}` to mark blanks
+- Inside braces, list acceptable answers separated by pipe `|`
+- First answer is the primary/preferred answer
+- Example formats:
+  - Single answer: `{{answer}}`
+  - Multiple answers: `{{answer1|answer2|answer3}}`
 
 ### 3. MATCHING
 ```json

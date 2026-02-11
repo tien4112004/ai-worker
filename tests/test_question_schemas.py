@@ -44,7 +44,7 @@
 #         )
 
 
-# def test_optional_additional_requirements():
+# def test_optional_prompt():
 #     """Test that additional requirements are optional."""
 #     request = GenerateQuestionsFromTopicRequest(
 #         topic="Test Topic",
@@ -53,7 +53,7 @@
 #         questions_per_difficulty={"easy": 3},
 #         question_types=["multiple_choice"],
 #     )
-#     assert request.additional_requirements is None
+#     assert request.prompt is None
 
 
 # def test_provider_defaults():
@@ -63,7 +63,7 @@
 #         grade_level="1",
 #         subject_code="TA",
 #         questions_per_difficulty={"easy": 1},
-#         question_types=["true_false"],
+#         question_types=["open_ended"],
 #     )
 #     assert request.provider == "google"
 #     assert request.model == "gemini-2.5-flash-lite"

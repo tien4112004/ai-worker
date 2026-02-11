@@ -310,26 +310,24 @@ class MultipleChoiceData(BaseModel):
         populate_by_name = True
 
 
-class BlankSegment(BaseModel):
-    """Segment for fill in the blank question."""
-
-    type: Literal["TEXT", "BLANK"]
-    content: str = Field(default="")
-    acceptableAnswers: Optional[List[str]] = Field(
-        None, alias="acceptable_answers"
-    )
-
-    class Config:
-        populate_by_name = True
-
-
 class FillInBlankData(BaseModel):
-    """Data for fill in the blank question."""
+    """Data for fill in the blank question. Backend parses this structure into segments.
+
+    Example:
+        {
+            "type": "FILL_IN_BLANK",
+            "data": "The capital is {{Hà Nội|Hanoi}}."
+            "case_sensitive": false
+        }
+    """
 
     type: Literal["FILL_IN_BLANK"] = Field(
         default="FILL_IN_BLANK", description="Question type discriminator"
     )
-    segments: List[BlankSegment]
+    data: str = Field(
+        ...,
+        description="Raw text with {{answer|alternative}} placeholders. Backend will parse this.",
+    )
     caseSensitive: bool = Field(False, alias="case_sensitive")
 
     class Config:
