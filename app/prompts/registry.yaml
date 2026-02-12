@@ -29,23 +29,61 @@ prompts:
   mindmap.user:
     path: "mindmap/usr_prompt.st"
     format: "st"
-  modification.refine:
-    path: "modification/refine_content.st"
+  # Slide content operations
+  modification.slide.refine:
+    path: "modification/slide/refine_content.st"
     format: "st"
-  modification.layout:
-    path: "modification/transform_layout.st"
+  modification.slide.expand:
+    path: "modification/slide/expand_content.st"
     format: "st"
-  modification.image:
-    path: "modification/generate_image.st"
+  modification.slide.shorten:
+    path: "modification/slide/shorten_content.st"
     format: "st"
-  modification.expand:
-    path: "modification/expand_slide.st"
+  modification.slide.grammar:
+    path: "modification/slide/grammar_content.st"
     format: "st"
-  modification.refine_text:
-    path: "modification/refine_element_text.st"
+  modification.slide.formal:
+    path: "modification/slide/formal_content.st"
     format: "st"
-  modification.replace_image:
-    path: "modification/replace_element_image.st"
+  modification.slide.layout:
+    path: "modification/slide/transform_layout.st"
+    format: "st"
+
+  # Text element operations
+  modification.element.refine:
+    path: "modification/element/refine_element_text.st"
+    format: "st"
+  modification.element.expand:
+    path: "modification/element/expand_element_text.st"
+    format: "st"
+  modification.element.shorten:
+    path: "modification/element/shorten_element_text.st"
+    format: "st"
+  modification.element.grammar:
+    path: "modification/element/grammar_element_text.st"
+    format: "st"
+  modification.element.formal:
+    path: "modification/element/formal_element_text.st"
+    format: "st"
+  modification.element.replace_image:
+    path: "modification/element/replace_element_image.st"
+    format: "st"
+
+  # Combined text operations
+  modification.combined_text.expand_items:
+    path: "modification/combined_text/expand_combined_text_items.st"
+    format: "st"
+  modification.combined_text.shorten_items:
+    path: "modification/combined_text/shorten_combined_text_items.st"
+    format: "st"
+  modification.combined_text.grammar_items:
+    path: "modification/combined_text/grammar_combined_text_items.st"
+    format: "st"
+  modification.combined_text.formal_items:
+    path: "modification/combined_text/formal_combined_text_items.st"
+    format: "st"
+  modification.combined_text.expand:
+    path: "modification/combined_text/expand_combined_text.st"
     format: "st"
   exam.matrix.system:
     path: "exam/matrix_sys_prompt.st"

@@ -1,8 +1,10 @@
 import json
+import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from google.cloud import aiplatform
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from phoenix.otel import register
@@ -22,6 +24,8 @@ from app.services.exam_rag_service import ExamRagService
 from app.services.exam_service import ExamService
 from app.services.mindmap_rag_service import MindmapRagService
 from app.services.slide_rag_service import SlideRagService
+
+logger = logging.getLogger("uvicorn.error")
 
 
 @asynccontextmanager
@@ -134,6 +138,19 @@ def create_app() -> FastAPI:
         allow_methods=settings.allowed_methods,
         allow_headers=settings.allowed_headers,
     )
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        """Catch-all exception handler for unexpected exceptions"""
+        logger.exception("Unhandled exception")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "success": False,
+                "message": "Internal server error",
+                "data": {},
+            },
+        )
 
     return app
 
