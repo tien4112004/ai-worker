@@ -21,7 +21,6 @@ from app.schemas.modification import (
     ExpandCombinedTextRequest,
     RefineContentRequest,
     RefineElementTextRequest,
-    ReplaceElementImageRequest,
     TransformLayoutRequest,
 )
 
@@ -35,76 +34,6 @@ class ModificationService:
 
     def _render(self, key: str, vars: Dict[str, Any] | None) -> str:
         return self.prompt_store.render(key, vars)
-
-    def _build_image_prompt(
-        self,
-        description: str,
-        style: str,
-        theme_description: Optional[str] = None,
-        art_description: Optional[str] = None,
-        slide_context: Optional[str] = None,
-    ) -> str:
-        """
-        Build a detailed image generation prompt for presentation slides.
-
-        DEPRECATED: This method is only used by the deprecated /api/modification/replace-image endpoint.
-        Spring Boot backend now handles all prompt building and calls /api/image/generate directly.
-
-        This method constructs a structured prompt by combining user description,
-        art style, theme colors, and presentation requirements.
-
-        Args:
-            description: User's description of desired image
-            style: Art style (e.g., "photorealistic", "cartoon", "digital-art")
-            theme_description: Theme color modifiers from theme.modifiers
-            art_description: Art style modifiers from art style configuration
-            slide_context: Additional context about slide layout (optional) - no longer used
-
-        Returns:
-            Complete prompt string ready for image generation API
-        """
-        # Validate required fields
-        if not description or not description.strip():
-            raise ValueError("Description cannot be empty")
-        if not style or not style.strip():
-            raise ValueError("Style cannot be empty")
-
-        # Build prompt with structured format
-        prompt_parts = [description]
-
-        # Add style directive
-        if style:
-            prompt_parts.append(f"Art style: {style}")
-
-        # Add art style modifiers (detailed instructions for the chosen style)
-        if art_description:
-            prompt_parts.append(art_description)
-
-        # Add theme color modifiers
-        if theme_description:
-            prompt_parts.append(
-                f"Color palette and theme: {theme_description}"
-            )
-
-        # Add presentation-specific requirements
-        prompt_parts.append(
-            "Create a professional, high-quality image suitable for presentation slides. "
-            "Ensure clean composition, good contrast, and visual clarity."
-        )
-
-        # Add aspect ratio hint
-        prompt_parts.append("Image format: 16:9 widescreen aspect ratio.")
-
-        final_prompt = " ".join(prompt_parts)
-
-        # Log warning if prompt is unusually long (monitoring only)
-        if len(final_prompt) > 500:
-            logger.warning(
-                "Image prompt is unusually long (%d chars). Consider simplifying descriptions.",
-                len(final_prompt),
-            )
-
-        return final_prompt
 
     def _get_operation(
         self, instruction: str, operation: Optional[str] = None
@@ -272,66 +201,6 @@ class ModificationService:
         except Exception as e:
             logger.exception("Unexpected error in refine_element_text")
             raise AIServiceError(f"Failed to refine text: {str(e)}")
-
-    def replace_element_image(
-        self, request: ReplaceElementImageRequest
-    ) -> Dict[str, Any]:
-        """
-        Replace image of a specific element.
-
-        DEPRECATED: This endpoint is no longer called by Spring Boot backend.
-        Spring Boot now builds the complete prompt and calls /api/image/generate directly.
-
-        For backward compatibility, this method still works by building a prompt
-        and calling the generic image generation endpoint.
-        """
-        try:
-            logger.warning(
-                "/api/modification/replace-image is deprecated. "
-                "Spring Boot should call /api/image/generate directly with a built prompt."
-            )
-
-            # Build the image generation prompt
-            image_prompt = self._build_image_prompt(
-                description=request.description,
-                style=request.style,
-                theme_description=request.themeDescription,
-                art_description=request.artDescription,
-            )
-
-            logger.info(
-                "Built image prompt (%d chars) for deprecated endpoint",
-                len(image_prompt),
-            )
-
-            # Delegate to generic image generation (which is the lightweight endpoint)
-            image_result = self.llm_executor.generate_image(
-                provider="google",
-                model="gemini-2.5-flash-image",
-                message=image_prompt,
-                number_of_images=1,
-                aspect_ratio="16:9",
-            )
-
-            # Extract base64 image and convert to data URI
-            if (
-                image_result
-                and "images" in image_result
-                and len(image_result["images"]) > 0
-            ):
-                base64_data = image_result["images"][0]
-                image_url = f"data:image/png;base64,{base64_data}"
-                return {"imageUrl": image_url}
-
-            error_msg = image_result.get("error", "Image generation failed")
-            raise RuntimeError(f"Image generation failed: {error_msg}")
-
-        except ValueError as e:
-            logger.error("Invalid input for image generation: %s", str(e))
-            raise AIServiceError(f"Invalid input: {str(e)}")
-        except Exception as e:
-            logger.exception("Unexpected error in replace_element_image")
-            raise AIServiceError(f"Failed to replace image: {str(e)}")
 
     def expand_combined_text(
         self, request: ExpandCombinedTextRequest
