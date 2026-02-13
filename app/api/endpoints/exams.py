@@ -4,6 +4,7 @@ import json
 from typing import List
 
 from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
 from app.depends import ExamServiceDep
@@ -53,25 +54,33 @@ def generate_exam_matrix(
 # Question Generation Endpoints
 @router.post(
     "/exams/generate-questions-from-matrix",
-    response_model=GenerateQuestionsFromMatrixResponse,
+    response_class=JSONResponse,
 )
 def generate_questions_from_matrix(
     request_body: GenerateQuestionsFromMatrixRequest, svc: ExamServiceDep
 ):
     """
-    Generate questions from matrix (FIXED - no longer deprecated).
+    Generate questions from matrix - returns raw LLM JSON response.
+
+    The backend handles all parsing, validation, and data enrichment.
 
     Supports:
     - Context-based questions (contexts pre-selected by backend)
     - Regular curriculum questions
     - Batch generation in single LLM call
 
-    This endpoint handles both context-based topics (with reading passages or images)
-    and regular curriculum topics, generating all questions efficiently in one batch.
+    Returns:
+        Raw JSON string with questions array from LLM
     """
     try:
-        result = svc.generate_questions_from_matrix(request_body)
-        return result
+        # Service returns raw JSON string
+        raw_json = svc.generate_questions_from_matrix(request_body)
+
+        # Parse to validate it's valid JSON, then return as-is
+        import json
+
+        parsed = json.loads(raw_json)
+        return JSONResponse(content=parsed)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

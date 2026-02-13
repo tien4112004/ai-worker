@@ -17,9 +17,6 @@ Return JSON with this structure:
       "difficulty": "KNOWLEDGE",
       "title": "Question text",
       "explanation": "Answer explanation",
-      "grade": "${grade}",
-      "chapter": "Topic Name",
-      "subject": "${subject}",
       "data": {
         "type": "MULTIPLE_CHOICE",
         "options": [
@@ -36,6 +33,8 @@ Return JSON with this structure:
 }
 ```
 
+**Note**: Do NOT include `grade`, `subject`, `chapter`, or `contextId` - these are set automatically by the system.
+
 ## Question Type Schemas
 
 ### MULTIPLE_CHOICE
@@ -45,9 +44,6 @@ Return JSON with this structure:
   "difficulty": "KNOWLEDGE|COMPREHENSION|APPLICATION|ADVANCED_APPLICATION",
   "title": "Question text",
   "explanation": "Why the answer is correct",
-  "grade": "K|1|2|3|4|5",
-  "chapter": "Topic name",
-  "subject": "T|TV|TA",
   "data": {
     "type": "MULTIPLE_CHOICE",
     "options": [
@@ -69,12 +65,15 @@ Return JSON with this structure:
 ```json
 {
   "type": "FILL_IN_BLANK",
+  "difficulty": "KNOWLEDGE",
   "title": "Question text with blank",
+  "explanation": "Answer explanation",
   "data": {
     "type": "FILL_IN_BLANK",
     "data": "The capital is {{Hà Nội|Hanoi}}.",
     "caseSensitive": false
-  }
+  },
+  "point": 1.0
 }
 ```
 
@@ -87,7 +86,9 @@ Return JSON with this structure:
 ```json
 {
   "type": "MATCHING",
+  "difficulty": "COMPREHENSION",
   "title": "Match the following",
+  "explanation": "Answer explanation",
   "data": {
     "type": "MATCHING",
     "pairs": [
@@ -99,7 +100,8 @@ Return JSON with this structure:
       }
     ],
     "shufflePairs": true
-  }
+  },
+  "point": 1.0
 }
 ```
 
@@ -111,12 +113,15 @@ Return JSON with this structure:
 ```json
 {
   "type": "OPEN_ENDED",
+  "difficulty": "APPLICATION",
   "title": "Question text",
+  "explanation": "Answer explanation",
   "data": {
     "type": "OPEN_ENDED",
     "expectedAnswer": "Sample answer for grading reference",
     "maxLength": 500
-  }
+  },
+  "point": 1.0
 }
 ```
 
@@ -136,11 +141,25 @@ Return JSON with this structure:
 4. Ensure grade-appropriate content
 
 ### General:
-1. Set `subject` to: T (Math), TV (Vietnamese), TA (English)
-2. Match exact difficulty level: KNOWLEDGE, COMPREHENSION, APPLICATION, ADVANCED_APPLICATION
-3. Generate EXACTLY the requested count for each requirement
-4. Return ONLY valid JSON, no markdown code blocks
-5. All text in Vietnamese unless subject is TA (English)
+1. **REQUIRED FIELDS** for each question:
+   - `topicId` (integer matching topic_index from requirements)
+   - `type` (MULTIPLE_CHOICE, FILL_IN_BLANK, MATCHING, OPEN_ENDED)
+   - `difficulty` (KNOWLEDGE, COMPREHENSION, APPLICATION, ADVANCED_APPLICATION)
+   - `title` (question text)
+   - `explanation` (answer explanation)
+   - `data` (type-specific question data)
+   - `point` (float score value)
+
+2. **AUTO-FILLED** (do NOT include these):
+   - `grade` - automatically set from request
+   - `subject` - automatically set from request
+   - `chapter` - automatically set from topic name
+   - `contextId` - automatically set for context-based questions
+
+3. Match exact difficulty level: KNOWLEDGE, COMPREHENSION, APPLICATION, ADVANCED_APPLICATION
+4. Generate EXACTLY the requested count for each requirement
+5. Return ONLY valid JSON, no markdown code blocks
+6. All text in Vietnamese unless subject is TA (English)
 
 ## Difficulty Guidelines
 

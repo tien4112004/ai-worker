@@ -30,6 +30,7 @@ from app.schemas.exam_content import (
     Question,
     QuestionGenerationStatus,
     Topic,
+    TopicWithQuestions,
     UsedContext,
 )
 
@@ -198,13 +199,13 @@ class ExamService:
     # Question Generation from Matrix (Priority 1)
     def generate_questions_from_matrix(
         self, request: GenerateQuestionsFromMatrixRequest
-    ) -> GenerateQuestionsFromMatrixResponse:
+    ) -> str:
         """
         Generate all questions in one LLM call (context-based + regular).
         Contexts are pre-selected by backend and included in request.
 
         Args:
-            request: Request containing matrix items with optional context info
+            request: Request containing topics with question requirements
 
         Returns:
             Response with generated questions and used contexts list
@@ -213,21 +214,21 @@ class ExamService:
             f"[EXAM_SERVICE] Generating questions from matrix for grade: {request.grade}, subject: {request.subject}"
         )
 
-        # Separate context vs regular items
-        context_items = [
-            item for item in request.matrix_items if item.context_info
+        # Separate context vs regular topics
+        context_topics = [
+            topic for topic in request.topics if topic.context_info
         ]
-        regular_items = [
-            item for item in request.matrix_items if not item.context_info
+        regular_topics = [
+            topic for topic in request.topics if not topic.context_info
         ]
 
         logger.info(
-            f"[EXAM_SERVICE] Context items: {len(context_items)}, Regular items: {len(regular_items)}"
+            f"[EXAM_SERVICE] Context topics: {len(context_topics)}, Regular topics: {len(regular_topics)}"
         )
 
         # Build unified prompt
         prompt_vars = self._build_matrix_prompt_vars(
-            request, context_items, regular_items
+            request, context_topics, regular_topics
         )
 
         sys_msg = self._system("exam.questions.system", prompt_vars)
@@ -235,7 +236,7 @@ class ExamService:
 
         # Build multimodal messages (text + images if present)
         messages = self._build_multimodal_messages(
-            sys_msg, usr_msg, context_items
+            sys_msg, usr_msg, context_topics
         )
 
         # Execute LLM
@@ -253,45 +254,15 @@ class ExamService:
             f"[EXAM_SERVICE] LLM call completed. Tokens: input={token_usage.input_tokens}, output={token_usage.output_tokens}"
         )
 
-        # Parse response
+        # Extract and return raw JSON response (let backend handle parsing)
         try:
             result_text = self._extract_json(result)
-            response_data = json.loads(result_text)
-
-            # Validate structure
-            if not isinstance(response_data, dict):
-                raise ValueError(
-                    f"Expected dict response, got {type(response_data)}"
-                )
-
-            questions_data = response_data.get("questions", [])
-            if not isinstance(questions_data, list):
-                raise ValueError(
-                    f"Expected questions list, got {type(questions_data)}"
-                )
-
-            # Parse questions
-            questions = self._parse_questions(questions_data)
-
-            # Build used_contexts list
-            used_contexts = [
-                UsedContext(
-                    topic_index=item.topic_index,
-                    context_id=item.context_info.context_id,
-                    context_title=item.context_info.context_title or "",
-                )
-                for item in context_items
-            ]
-
             logger.info(
-                f"[EXAM_SERVICE] Successfully generated {len(questions)} questions with {len(used_contexts)} contexts"
+                f"[EXAM_SERVICE] Successfully generated questions, returning raw response to backend"
             )
 
-            return GenerateQuestionsFromMatrixResponse(
-                questions=questions,
-                used_contexts=used_contexts,
-                total_questions=len(questions),
-            )
+            # Return raw JSON string for backend to parse
+            return result_text
 
         except json.JSONDecodeError as e:
             logger.error(f"[EXAM_SERVICE] JSON parsing error: {e}")
@@ -300,24 +271,18 @@ class ExamService:
     def _build_matrix_prompt_vars(
         self,
         request: GenerateQuestionsFromMatrixRequest,
-        context_items: List,
-        regular_items: List,
+        context_topics: List,
+        regular_topics: List,
     ) -> Dict[str, Any]:
         """Build prompt variables for matrix-based generation."""
-        # Map subject codes to names
-        subject_map = {
-            "T": "Toán (Mathematics)",
-            "TV": "Tiếng Việt (Vietnamese)",
-            "TA": "Tiếng Anh (English)",
-        }
-        subject_name = subject_map.get(request.subject, request.subject)
 
         # Build context topics section
         context_topics_section = ""
-        if context_items:
+        if context_topics:
             context_sections = []
-            for item in context_items:
-                ctx_info = item.context_info
+            for topic in context_topics:
+                ctx_info = topic.context_info
+
                 context_type_display = (
                     "Reading Passage"
                     if ctx_info.context_type == "TEXT"
@@ -328,18 +293,30 @@ class ExamService:
                 context_content = ""
                 if ctx_info.context_type == "TEXT":
                     context_content = (
-                        f"\n**Context Content**:\n{ctx_info.context_content}"
+                        f"\n\n**Context Content**:\n{ctx_info.context_content}"
                     )
+
+                # Build requirements list from questionsPerDifficulty
+                requirements = []
+                for (
+                    difficulty,
+                    question_types,
+                ) in topic.questions_per_difficulty.items():
+                    for question_type, req in question_types.items():
+                        requirements.append(
+                            f"  - {difficulty} / {question_type}: "
+                            f"{req.count} questions × {req.points} points"
+                        )
+                requirements_text = "\n".join(requirements)
 
                 context_sections.append(
                     f"""
-**Topic {item.topic_index + 1}: {item.topic_name}**
+**Topic {topic.topic_index + 1}: {topic.topic_name}**
 - Context Type: {context_type_display}
-- Context Title: {ctx_info.context_title or 'N/A'}
-- Difficulty: {item.difficulty}
-- Question Type: {item.question_type}
-- Count: {item.count} questions
-- Points: {item.points} per question{context_content}
+- Context Title: {ctx_info.context_title or 'N/A'}{context_content}
+
+**Requirements:**
+{requirements_text}
 """
                 )
 
@@ -347,32 +324,47 @@ class ExamService:
 
         # Build regular topics section
         regular_topics_section = ""
-        if regular_items:
+        if regular_topics:
             regular_sections = []
-            for item in regular_items:
+            for topic in regular_topics:
+                # Build requirements list from questionsPerDifficulty
+                requirements = []
+                for (
+                    difficulty,
+                    question_types,
+                ) in topic.questions_per_difficulty.items():
+                    for question_type, req in question_types.items():
+                        requirements.append(
+                            f"  - {difficulty} / {question_type}: "
+                            f"{req.count} questions × {req.points} points"
+                        )
+                requirements_text = "\n".join(requirements)
+
                 regular_sections.append(
                     f"""
-**Topic {item.topic_index + 1}: {item.topic_name}**
-- Difficulty: {item.difficulty}
-- Question Type: {item.question_type}
-- Count: {item.count} questions
-- Points: {item.points} per question
+**Topic {topic.topic_index + 1}: {topic.topic_name}**
+**Requirements:**
+{requirements_text}
 """
                 )
 
             regular_topics_section = "\n".join(regular_sections)
 
         # Calculate totals
-        total_topics = len(
-            set(item.topic_index for item in request.matrix_items)
-        )
-        context_count = len(set(item.topic_index for item in context_items))
-        regular_count = len(set(item.topic_index for item in regular_items))
-        total_questions = sum(item.count for item in request.matrix_items)
+        total_topics = len(request.topics)
+        context_count = len(context_topics)
+        regular_count = len(regular_topics)
+
+        # Calculate total questions from nested structure
+        total_questions = 0
+        for topic in request.topics:
+            for difficulty_reqs in topic.questions_per_difficulty.values():
+                for req in difficulty_reqs.values():
+                    total_questions += req.count
 
         return {
             "grade": request.grade,
-            "subject": subject_name,
+            "subject": request.subject,  # Use code (T/TV/TA), not full name
             "context_topics_section": context_topics_section or "None",
             "regular_topics_section": regular_topics_section or "None",
             "total_topics": total_topics,
@@ -421,11 +413,30 @@ class ExamService:
 
         return messages
 
-    def _parse_questions(self, questions_data: List[Dict]) -> List[Question]:
-        """Parse and validate question data."""
+    def _parse_questions(
+        self,
+        questions_data: List[Dict],
+        topic_to_context: Dict[int, str] = None,
+    ) -> List[Question]:
+        """
+        Parse and validate question data (used by other endpoints).
+
+        NOTE: The matrix endpoint now returns raw JSON to backend for parsing.
+        This method is kept for other question generation endpoints.
+
+        Args:
+            questions_data: Raw question data from LLM
+            topic_to_context: Optional mapping of topic_index to context_id
+        """
         questions = []
         for i, q in enumerate(questions_data):
             try:
+                # Set contextId if this question belongs to a context-based topic
+                if topic_to_context:
+                    topic_id = q.get("topicId")
+                    if topic_id is not None and topic_id in topic_to_context:
+                        q["contextId"] = topic_to_context[topic_id]
+
                 question = Question(**q)
                 questions.append(question)
             except Exception as e:
