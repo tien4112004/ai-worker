@@ -20,7 +20,7 @@ ${prompt}
 Using the curriculum chapters provided in the system prompt:
 1. **Evaluate question-to-chapter ratio**:
    - If totalQuestions (${total_questions}) < 10: Select ONLY 1-2 chapters maximum
-   - If totalQuestions is 10-20: Select 2-4 chapters maximum  
+   - If totalQuestions is 10-20: Select 2-4 chapters maximum
    - If totalQuestions > 20: Can use more chapters as appropriate
 2. **Select relevant chapters** - You do NOT need to use all chapters, only the most important ones
 3. Organize selected chapters into logical topics (high-level categories that make sense together)

@@ -17,6 +17,8 @@ from app.schemas.exam_content import (
     ExamMatrix,
     GenerateMatrixRequest,
     GenerateQuestionsFromContextRequest,
+    GenerateQuestionsFromMatrixRequest,
+    GenerateQuestionsFromMatrixResponse,
     GenerateQuestionsFromTopicRequest,
     GenerateQuestionsRequest,
     GenerationProgress,
@@ -28,6 +30,7 @@ from app.schemas.exam_content import (
     Question,
     QuestionGenerationStatus,
     Topic,
+    UsedContext,
 )
 
 logger = logging.getLogger(__name__)
@@ -194,16 +197,244 @@ class ExamService:
 
     # Question Generation from Matrix (Priority 1)
     def generate_questions_from_matrix(
-        self, request: GenerateQuestionsRequest
-    ) -> List[Question]:
+        self, request: GenerateQuestionsFromMatrixRequest
+    ) -> GenerateQuestionsFromMatrixResponse:
         """
-        DEPRECATED: Legacy matrix-based generation.
-        Use generate_questions_from_topic instead.
+        Generate all questions in one LLM call (context-based + regular).
+        Contexts are pre-selected by backend and included in request.
+
+        Args:
+            request: Request containing matrix items with optional context info
+
+        Returns:
+            Response with generated questions and used contexts list
         """
-        raise NotImplementedError(
-            "Matrix-based question generation is deprecated. "
-            "Use /questions/generate endpoint with GenerateQuestionsFromTopicRequest instead."
+        logger.info(
+            f"[EXAM_SERVICE] Generating questions from matrix for grade: {request.grade}, subject: {request.subject}"
         )
+
+        # Separate context vs regular items
+        context_items = [
+            item for item in request.matrix_items if item.context_info
+        ]
+        regular_items = [
+            item for item in request.matrix_items if not item.context_info
+        ]
+
+        logger.info(
+            f"[EXAM_SERVICE] Context items: {len(context_items)}, Regular items: {len(regular_items)}"
+        )
+
+        # Build unified prompt
+        prompt_vars = self._build_matrix_prompt_vars(
+            request, context_items, regular_items
+        )
+
+        sys_msg = self._system("exam.questions.system", prompt_vars)
+        usr_msg = self._system("exam.questions.user", prompt_vars)
+
+        # Build multimodal messages (text + images if present)
+        messages = self._build_multimodal_messages(
+            sys_msg, usr_msg, context_items
+        )
+
+        # Execute LLM
+        logger.info(
+            f"[EXAM_SERVICE] Calling LLM with provider: {request.provider}, model: {request.model}"
+        )
+
+        result, token_usage = self.llm_executor.batch(
+            provider=request.provider or "google",
+            model=request.model or "gemini-2.5-flash",
+            messages=messages,
+        )
+
+        logger.info(
+            f"[EXAM_SERVICE] LLM call completed. Tokens: input={token_usage.input_tokens}, output={token_usage.output_tokens}"
+        )
+
+        # Parse response
+        try:
+            result_text = self._extract_json(result)
+            response_data = json.loads(result_text)
+
+            # Validate structure
+            if not isinstance(response_data, dict):
+                raise ValueError(
+                    f"Expected dict response, got {type(response_data)}"
+                )
+
+            questions_data = response_data.get("questions", [])
+            if not isinstance(questions_data, list):
+                raise ValueError(
+                    f"Expected questions list, got {type(questions_data)}"
+                )
+
+            # Parse questions
+            questions = self._parse_questions(questions_data)
+
+            # Build used_contexts list
+            used_contexts = [
+                UsedContext(
+                    topic_index=item.topic_index,
+                    context_id=item.context_info.context_id,
+                    context_title=item.context_info.context_title or "",
+                )
+                for item in context_items
+            ]
+
+            logger.info(
+                f"[EXAM_SERVICE] Successfully generated {len(questions)} questions with {len(used_contexts)} contexts"
+            )
+
+            return GenerateQuestionsFromMatrixResponse(
+                questions=questions,
+                used_contexts=used_contexts,
+                total_questions=len(questions),
+            )
+
+        except json.JSONDecodeError as e:
+            logger.error(f"[EXAM_SERVICE] JSON parsing error: {e}")
+            raise ValueError(f"Invalid JSON response from LLM: {e}")
+
+    def _build_matrix_prompt_vars(
+        self,
+        request: GenerateQuestionsFromMatrixRequest,
+        context_items: List,
+        regular_items: List,
+    ) -> Dict[str, Any]:
+        """Build prompt variables for matrix-based generation."""
+        # Map subject codes to names
+        subject_map = {
+            "T": "Toán (Mathematics)",
+            "TV": "Tiếng Việt (Vietnamese)",
+            "TA": "Tiếng Anh (English)",
+        }
+        subject_name = subject_map.get(request.subject, request.subject)
+
+        # Build context topics section
+        context_topics_section = ""
+        if context_items:
+            context_sections = []
+            for item in context_items:
+                ctx_info = item.context_info
+                context_type_display = (
+                    "Reading Passage"
+                    if ctx_info.context_type == "TEXT"
+                    else "Image"
+                )
+
+                # For text contexts, include the content in prompt
+                context_content = ""
+                if ctx_info.context_type == "TEXT":
+                    context_content = (
+                        f"\n**Context Content**:\n{ctx_info.context_content}"
+                    )
+
+                context_sections.append(
+                    f"""
+**Topic {item.topic_index + 1}: {item.topic_name}**
+- Context Type: {context_type_display}
+- Context Title: {ctx_info.context_title or 'N/A'}
+- Difficulty: {item.difficulty}
+- Question Type: {item.question_type}
+- Count: {item.count} questions
+- Points: {item.points} per question{context_content}
+"""
+                )
+
+            context_topics_section = "\n".join(context_sections)
+
+        # Build regular topics section
+        regular_topics_section = ""
+        if regular_items:
+            regular_sections = []
+            for item in regular_items:
+                regular_sections.append(
+                    f"""
+**Topic {item.topic_index + 1}: {item.topic_name}**
+- Difficulty: {item.difficulty}
+- Question Type: {item.question_type}
+- Count: {item.count} questions
+- Points: {item.points} per question
+"""
+                )
+
+            regular_topics_section = "\n".join(regular_sections)
+
+        # Calculate totals
+        total_topics = len(
+            set(item.topic_index for item in request.matrix_items)
+        )
+        context_count = len(set(item.topic_index for item in context_items))
+        regular_count = len(set(item.topic_index for item in regular_items))
+        total_questions = sum(item.count for item in request.matrix_items)
+
+        return {
+            "grade": request.grade,
+            "subject": subject_name,
+            "context_topics_section": context_topics_section or "None",
+            "regular_topics_section": regular_topics_section or "None",
+            "total_topics": total_topics,
+            "context_count": context_count,
+            "regular_count": regular_count,
+            "total_questions": total_questions,
+        }
+
+    def _build_multimodal_messages(
+        self, sys_msg: str, usr_msg: str, context_items: List
+    ) -> List[BaseMessage]:
+        """Build messages with text and images for multimodal generation."""
+        messages = [SystemMessage(content=sys_msg)]
+
+        # Check if any context items have images
+        image_items = [
+            item
+            for item in context_items
+            if item.context_info.context_type == "IMAGE"
+        ]
+
+        if not image_items:
+            # Text-only message
+            messages.append(HumanMessage(content=usr_msg))
+        else:
+            # Multimodal message with images
+            content_parts = [{"type": "text", "text": usr_msg}]
+
+            for item in image_items:
+                ctx_info = item.context_info
+                # Clean base64 string if needed
+                image_data = ctx_info.context_content
+                if "," in image_data:
+                    image_data = image_data.split(",")[1]
+
+                content_parts.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_data}"
+                        },
+                    }
+                )
+
+            messages.append(HumanMessage(content=content_parts))
+
+        return messages
+
+    def _parse_questions(self, questions_data: List[Dict]) -> List[Question]:
+        """Parse and validate question data."""
+        questions = []
+        for i, q in enumerate(questions_data):
+            try:
+                question = Question(**q)
+                questions.append(question)
+            except Exception as e:
+                logger.error(
+                    f"[EXAM_SERVICE] Failed to parse question {i}: {e}"
+                )
+                logger.error(f"[EXAM_SERVICE] Question data: {q}")
+                raise ValueError(f"Invalid question format at index {i}: {e}")
+        return questions
 
     # # TODO: Do it later
     #     async def generate_questions_from_matrix_stream(

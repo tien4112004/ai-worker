@@ -10,6 +10,8 @@ from app.depends import ExamServiceDep
 from app.schemas.exam_content import (
     ExamMatrix,
     GenerateMatrixRequest,
+    GenerateQuestionsFromMatrixRequest,
+    GenerateQuestionsFromMatrixResponse,
     GenerateQuestionsRequest,
     MatrixItem,
     Question,
@@ -50,16 +52,22 @@ def generate_exam_matrix(
 
 # Question Generation Endpoints
 @router.post(
-    "/exams/generate-questions-from-matrix", response_model=List[Question]
+    "/exams/generate-questions-from-matrix",
+    response_model=GenerateQuestionsFromMatrixResponse,
 )
-def generate_questions(
-    request_body: GenerateQuestionsRequest, svc: ExamServiceDep
+def generate_questions_from_matrix(
+    request_body: GenerateQuestionsFromMatrixRequest, svc: ExamServiceDep
 ):
     """
-    Generate questions based on an exam matrix.
+    Generate questions from matrix (FIXED - no longer deprecated).
 
-    This is the high-priority endpoint that takes an approved matrix
-    and generates actual exam questions with contexts, answers, and explanations.
+    Supports:
+    - Context-based questions (contexts pre-selected by backend)
+    - Regular curriculum questions
+    - Batch generation in single LLM call
+
+    This endpoint handles both context-based topics (with reading passages or images)
+    and regular curriculum topics, generating all questions efficiently in one batch.
     """
     try:
         result = svc.generate_questions_from_matrix(request_body)

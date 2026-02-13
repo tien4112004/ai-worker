@@ -15,7 +15,7 @@ ${chapters}
 
 **Important Chapter Format**: Each chapter is provided in the format `"chapter_id|chapter_name"`. When creating subtopics from chapters, you MUST extract and use the chapter_id as the subtopic ID.
 
-**Important**: 
+**Important**:
 - You do NOT need to use ALL provided chapters - select only the ones relevant to the test requirements
 - Organize selected chapters into logical topics and subtopics that make sense together
 - Do NOT force unrelated chapters into topics just to use them all
@@ -59,7 +59,7 @@ ${question_types}
    - **If totalQuestions is 10-20**: Select 2-4 chapters maximum
    - **If totalQuestions > 20**: Can use more chapters as needed
    - Quality over quantity: Better to cover fewer topics well than many topics poorly
-   
+
 2. **Topic Selection**: Choose topics and subtopics that make sense together. Do NOT include all chapters if they don't fit logically.
 3. **Topic Balance**: Distribute questions across selected topics based on their importance and complexity. Questions from any subtopic within a topic count toward that topic's requirements.
 4. **Cells Can Be Empty**: Not every cell needs questions. Use "0:0" for cells that don't have questions. Focus on meeting the exact total question count.
@@ -185,7 +185,7 @@ Return ONLY a valid JSON object with this exact structure:
    - Calculate: sum of all "count" values in "count:points" format
    - Example: If total_questions=20, then sum of all counts must be exactly 20, not 19 or 21
    - **Empty cells are allowed**: Use "0:0" for cells without questions
-   
+
 2. **Total Points Constraint**: The sum of ALL points across ALL matrix cells MUST EXACTLY EQUAL ${total_points}
    - Calculate: sum of all "points" values in "count:points" format
    - Example: If total_points=100, then sum of all points must be exactly 100.0

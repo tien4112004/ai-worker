@@ -1,23 +1,27 @@
-Generate questions based on this exam matrix:
+Generate questions for ${total_topics} topics:
 
-**Matrix Items:**
-${matrix_items}
+=== CONTEXT-BASED TOPICS ===
 
-**Total Questions to Generate:** ${total_questions}
+${context_topics_section}
 
-Generate all questions following these requirements:
+=== REGULAR TOPICS ===
 
-1. Create EXACTLY the number of questions specified in each matrix item
-2. Match the difficulty level specified for each item
-3. Use appropriate language for the grade level indicated
-4. When requires_context is true, create a shared context (reading passage, etc.) for those questions
-5. Ensure all questions are educationally sound and test genuine understanding
-6. Provide clear explanations for each question
-7. Make questions engaging and relatable to children
+${regular_topics_section}
 
-Remember:
-- Return ONLY a valid JSON array
-- No explanatory text before or after
-- Follow the exact output format specified in the system prompt
-- Ensure variety and avoid repetition
-- All content must be factually accurate and age-appropriate
+**Summary:**
+- Total Topics: ${total_topics}
+- Context Topics: ${context_count}
+- Regular Topics: ${regular_count}
+- Total Questions: ${total_questions}
+- Grade: ${grade}
+- Subject: ${subject}
+
+Generate EXACTLY ${total_questions} questions matching the requirements above.
+
+**Important Instructions:**
+1. For context-based topics: Base ALL questions on the provided context (text or image)
+2. For regular topics: Generate from curriculum knowledge
+3. Set `topicId` field to match the topic number (0-indexed)
+4. Return ONLY valid JSON in the format: {"questions": [...]}
+5. No markdown code blocks, no explanatory text
+6. All text in Vietnamese unless subject is TA (English)

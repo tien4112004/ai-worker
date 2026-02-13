@@ -504,3 +504,93 @@ class GenerateQuestionsFromContextRequest(BaseModel):
     model: Optional[str] = Field(
         default="gemini-2.5-flash", description="LLM model"
     )
+
+
+# ============================================================================
+# Context-Based Question Generation from Matrix
+# ============================================================================
+
+
+class ContextInfo(BaseModel):
+    """Information about a randomly selected context."""
+
+    topic_index: int = Field(
+        ..., description="Index of the topic in the matrix"
+    )
+    topic_name: str = Field(..., description="Name of the topic")
+    context_id: str = Field(..., description="ID of the selected context")
+    context_type: Literal["TEXT", "IMAGE"] = Field(
+        ..., description="Type of context"
+    )
+    context_content: str = Field(
+        ...,
+        description="Context content (text or base64-encoded image)",
+    )
+    context_title: Optional[str] = Field(
+        None, description="Title of the context"
+    )
+
+
+class MatrixItemWithContext(BaseModel):
+    """Matrix item that may include context information."""
+
+    topic_index: int = Field(
+        ..., description="Index for grouping questions by topic"
+    )
+    topic_name: str = Field(..., description="Name of the topic")
+    difficulty: Literal[
+        "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
+    ] = Field(..., description="Difficulty level")
+    question_type: Literal[
+        "MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"
+    ] = Field(..., description="Type of question")
+    count: int = Field(
+        ..., ge=1, description="Number of questions to generate"
+    )
+    points: float = Field(..., ge=0, description="Points per question")
+    context_info: Optional[ContextInfo] = Field(
+        None,
+        description="Context information if this topic has context-based questions",
+    )
+
+
+class GenerateQuestionsFromMatrixRequest(BaseModel):
+    """Request to generate questions from matrix (supports context-based topics)."""
+
+    grade: Literal["K", "1", "2", "3", "4", "5"] = Field(
+        ..., description="Grade level"
+    )
+    subject: str = Field(..., description="Subject code (T, TV, TA)")
+    matrix_items: List[MatrixItemWithContext] = Field(
+        ...,
+        description="Flattened matrix items with optional context information",
+    )
+    provider: Optional[str] = Field(
+        default="google", description="LLM provider"
+    )
+    model: Optional[str] = Field(
+        default="gemini-2.5-flash", description="LLM model to use"
+    )
+
+
+class UsedContext(BaseModel):
+    """Information about a context that was used for question generation."""
+
+    topic_index: int = Field(..., description="Topic index in the matrix")
+    context_id: str = Field(..., description="ID of the context used")
+    context_title: str = Field(..., description="Title of the context")
+
+
+class GenerateQuestionsFromMatrixResponse(BaseModel):
+    """Response with generated questions from matrix."""
+
+    questions: List[Question] = Field(
+        ..., description="List of generated questions"
+    )
+    used_contexts: List[UsedContext] = Field(
+        default_factory=list,
+        description="List of contexts that were used",
+    )
+    total_questions: int = Field(
+        ..., description="Total number of questions generated"
+    )
