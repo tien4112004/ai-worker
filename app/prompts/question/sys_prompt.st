@@ -31,7 +31,6 @@ You must return a JSON array of Question objects. Each Question follows this str
   "type": "MULTIPLE_CHOICE",
   "title": "What is 2 + 2?",
   "data": {
-    "type": "MULTIPLE_CHOICE",
     "options": [
       {
         "text": "3",
@@ -62,40 +61,26 @@ You must return a JSON array of Question objects. Each Question follows this str
 - Exactly 4 options
 - One correct answer (isCorrect: true)
 - Text-based options (imageUrl can be null)
-- data object MUST include "type" field
 
 ### 2. FILL_IN_BLANK
 ```json
 {
-  "type": "fill_in_blank",
+  "type": "FILL_IN_BLANK",
   "title": "Complete the sentence",
   "data": {
-    "type": "FILL_IN_BLANK",
-    "segments": [
-      {
-        "type": "TEXT",
-        "content": "The capital of Vietnam is "
-      },
-      {
-        "type": "BLANK",
-        "content": "",
-        "acceptableAnswers": ["Hà Nội", "Ha Noi", "Hanoi"]
-      },
-      {
-        "type": "TEXT",
-        "content": "."
-      }
-    ],
-    "caseSensitive": false
+    "data": "The capital of Vietnam is {{Hà Nội|Ha Noi|Hanoi}}."
   }
 }
 ```
 **Requirements:**
-- Segments alternate between TEXT and BLANK
-- BLANK segments have empty content but acceptableAnswers array
-- Multiple acceptable answers for flexibility
-- caseSensitive: false for Vietnamese (case variations)
-- data object MUST include "type" field
+- `data` field is an object with a `data` field (nested structure)
+- The nested `data` field contains the raw text with blank placeholders
+- Use double braces `{{}}` to mark blanks
+- Inside braces, list acceptable answers separated by pipe `|`
+- First answer is the primary/preferred answer
+- Example formats:
+  - Single answer: `{{answer}}`
+  - Multiple answers: `{{answer1|answer2|answer3}}`
 
 ### 3. MATCHING
 ```json
@@ -103,7 +88,6 @@ You must return a JSON array of Question objects. Each Question follows this str
   "type": "matching",
   "title": "Match the items",
   "data": {
-    "type": "MATCHING",
     "pairs": [
       {
         "left": "Cat",
@@ -138,7 +122,6 @@ You must return a JSON array of Question objects. Each Question follows this str
 - 4-6 pairs
 - Each pair has left and right items
 - imageUrl fields can be null
-- data object MUST include "type" field
 
 ### 4. OPEN_ENDED
 ```json
@@ -146,7 +129,6 @@ You must return a JSON array of Question objects. Each Question follows this str
   "type": "open_ended",
   "title": "Describe your favorite animal",
   "data": {
-    "type": "OPEN_ENDED",
     "expectedAnswer": "Sample answer describing an animal with its characteristics...",
     "maxLength": 500
   }
@@ -155,7 +137,6 @@ You must return a JSON array of Question objects. Each Question follows this str
 **Requirements:**
 - expectedAnswer provides sample/key points
 - maxLength limits student response
-- data object MUST include "type" field
 
 ## Difficulty Levels
 

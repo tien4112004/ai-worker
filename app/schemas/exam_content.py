@@ -73,9 +73,7 @@ class DimensionSubtopic(BaseModel):
 class DimensionTopic(BaseModel):
     """Topic as organizational container for subtopics."""
 
-    name: str = Field(
-        ..., description="Display name of the topic (no ID needed)"
-    )
+    name: str = Field(..., description="Display name of the topic")
     subtopics: List[DimensionSubtopic] = Field(
         ..., description="List of subtopics under this topic"
     )
@@ -206,14 +204,14 @@ class GenerateMatrixRequest(BaseModel):
         description="Difficulty levels to include",
     )
     questionTypes: Optional[List[str]] = Field(
-        default=["MULTIPLE_CHOICE", "FILL_IN_BLANK", "TRUE_FALSE", "MATCHING"],
+        default=["MULTIPLE_CHOICE", "FILL_IN_BLANK", "OPEN_ENDED", "MATCHING"],
         description="Question types to include",
         alias="question_types",
     )
-    additionalRequirements: Optional[str] = Field(
+    prompt: Optional[str] = Field(
         None,
         description="Additional requirements or context for the exam",
-        alias="additional_requirements",
+        alias="prompt",
     )
     language: str = Field(
         default="vi",
@@ -246,7 +244,7 @@ class GenerateMatrixRequest(BaseModel):
                 if self.questionTypes
                 else "MULTIPLE_CHOICE, FILL_IN_BLANK, MATCHING, OPEN_ENDED"
             ),
-            "additional_requirements": self.additionalRequirements or "",
+            "prompt": self.prompt or "",
             "language": self.language,
         }
 
@@ -257,7 +255,6 @@ class MatrixItem(BaseModel):
     topic: str = Field(..., description="Topic or subtopic for questions")
     question_type: Literal[
         "MULTIPLE_CHOICE",
-        "TRUE_FALSE",
         "FILL_IN_BLANK",
         "OPEN_ENDED",
         "MATCHING",
@@ -313,26 +310,24 @@ class MultipleChoiceData(BaseModel):
         populate_by_name = True
 
 
-class BlankSegment(BaseModel):
-    """Segment for fill in the blank question."""
-
-    type: Literal["TEXT", "BLANK"]
-    content: str = Field(default="")
-    acceptableAnswers: Optional[List[str]] = Field(
-        None, alias="acceptable_answers"
-    )
-
-    class Config:
-        populate_by_name = True
-
-
 class FillInBlankData(BaseModel):
-    """Data for fill in the blank question."""
+    """Data for fill in the blank question. Backend parses this structure into segments.
+
+    Example:
+        {
+            "type": "FILL_IN_BLANK",
+            "data": "The capital is {{Hà Nội|Hanoi}}."
+            "case_sensitive": false
+        }
+    """
 
     type: Literal["FILL_IN_BLANK"] = Field(
         default="FILL_IN_BLANK", description="Question type discriminator"
     )
-    segments: List[BlankSegment]
+    data: str = Field(
+        ...,
+        description="Raw text with {{answer|alternative}} placeholders. Backend will parse this.",
+    )
     caseSensitive: bool = Field(False, alias="case_sensitive")
 
     class Config:
@@ -391,6 +386,11 @@ class Question(BaseModel):
     chapter: str = Field(..., description="Topic/chapter name")
     subject: Literal["T", "TV", "TA"] = Field(
         ..., description="Subject code: T, TV, TA"
+    )
+    contextId: Optional[str] = Field(
+        None,
+        alias="context_id",
+        description="ID of the context this question belongs to (for context-based questions)",
     )
     data: Union[
         MultipleChoiceData, FillInBlankData, MatchingData, OpenEndedData
@@ -455,7 +455,7 @@ class GenerateQuestionsFromTopicRequest(BaseModel):
         Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
     ] = Field(..., description="Types of questions to generate")
 
-    additional_requirements: Optional[str] = Field(
+    prompt: Optional[str] = Field(
         None,
         description="Additional requirements or context for question generation",
     )
@@ -497,7 +497,7 @@ class GenerateQuestionsFromContextRequest(BaseModel):
         Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
     ] = Field(..., description="Types of questions to generate")
 
-    additional_requirements: Optional[str] = Field(
+    prompt: Optional[str] = Field(
         None,
         description="Additional requirements or context for question generation",
     )
@@ -509,3 +509,141 @@ class GenerateQuestionsFromContextRequest(BaseModel):
     model: Optional[str] = Field(
         default="gemini-2.5-flash", description="LLM model"
     )
+
+
+# ============================================================================
+# Context-Based Question Generation from Matrix
+# ============================================================================
+
+
+class ContextInfo(BaseModel):
+    """Information about a randomly selected context."""
+
+    topic_index: int = Field(
+        ..., description="Index of the topic in the matrix"
+    )
+    topic_name: str = Field(..., description="Name of the topic")
+    context_id: str = Field(..., description="ID of the selected context")
+    context_type: Literal["TEXT", "IMAGE"] = Field(
+        ..., description="Type of context"
+    )
+    context_content: str = Field(
+        ...,
+        description="Context content (text or base64-encoded image)",
+    )
+    context_title: Optional[str] = Field(
+        None, description="Title of the context"
+    )
+
+
+class QuestionRequirement(BaseModel):
+    """Requirement for a specific difficulty and question type."""
+
+    count: int = Field(..., ge=1, description="Number of questions")
+    points: float = Field(..., ge=0, description="Points per question")
+
+
+class TopicRequirement(BaseModel):
+    """Requirements for a single topic with optional context."""
+
+    topic_index: int = Field(
+        ..., description="Index for grouping questions by topic"
+    )
+    topic_name: str = Field(..., description="Name of the topic")
+    context_info: Optional[ContextInfo] = Field(
+        None,
+        description="Context information if this topic has context-based questions",
+    )
+    questions_per_difficulty: Dict[
+        Literal[
+            "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
+        ],
+        Dict[
+            Literal[
+                "MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"
+            ],
+            QuestionRequirement,
+        ],
+    ] = Field(
+        ...,
+        alias="questionsPerDifficulty",
+        description="Map of difficulty -> question_type -> requirements",
+    )
+
+    class Config:
+        populate_by_name = True
+
+
+class GenerateQuestionsFromMatrixRequest(BaseModel):
+    """Request to generate questions from matrix (supports context-based topics)."""
+
+    grade: Literal["K", "1", "2", "3", "4", "5"] = Field(
+        ..., description="Grade level"
+    )
+    subject: str = Field(..., description="Subject code (T, TV, TA)")
+    topics: List[TopicRequirement] = Field(
+        ...,
+        description="List of topics with their question requirements",
+    )
+    provider: Optional[str] = Field(
+        default="google", description="LLM provider"
+    )
+    model: Optional[str] = Field(
+        default="gemini-2.5-flash", description="LLM model to use"
+    )
+
+
+class UsedContext(BaseModel):
+    """Information about a context that was used for question generation."""
+
+    context_id: str = Field(
+        ..., alias="contextId", description="ID of the context used"
+    )
+    context_title: str = Field(
+        ..., alias="contextTitle", description="Title of the context"
+    )
+    context_type: str = Field(
+        ..., alias="contextType", description="Type of context (TEXT, IMAGE)"
+    )
+    context_content: str = Field(
+        ..., alias="contextContent", description="The context content"
+    )
+
+    class Config:
+        populate_by_name = True
+
+
+class TopicWithQuestions(BaseModel):
+    """A topic with its generated questions and optional context."""
+
+    topic_index: int = Field(
+        ..., alias="topicIndex", description="Index of the topic"
+    )
+    topic_name: str = Field(
+        ..., alias="topicName", description="Name of the topic"
+    )
+    context: Optional[UsedContext] = Field(
+        None, description="Context info if this is a context-based topic"
+    )
+    questions: List[Question] = Field(
+        ..., description="Questions generated for this topic"
+    )
+
+    class Config:
+        populate_by_name = True
+
+
+class GenerateQuestionsFromMatrixResponse(BaseModel):
+    """Response with generated questions from matrix, grouped by topic."""
+
+    topics: List[TopicWithQuestions] = Field(
+        ..., description="Topics with their questions and optional context"
+    )
+    total_questions: int = Field(
+        ...,
+        alias="totalQuestions",
+        description="Total number of questions generated",
+    )
+
+    class Config:
+        populate_by_name = True

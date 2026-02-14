@@ -12,7 +12,7 @@ ${objectives}
 ${difficulty_distribution}
 
 **Question Types to use**: ${question_types}
-${additional_requirements}
+${prompt}
 
 **Important Instructions**:
 - Analyze the provided context carefully.

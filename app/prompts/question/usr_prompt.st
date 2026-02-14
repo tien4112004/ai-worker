@@ -8,7 +8,7 @@ Generate exam questions with the following specifications:
 ${difficulty_distribution}
 
 **Question Types to use**: ${question_types}
-${additional_requirements}
+${prompt}
 
 **Important Instructions**:
 - Create EXACTLY ${total_questions} questions
