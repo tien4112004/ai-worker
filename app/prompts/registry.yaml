@@ -1,46 +1,109 @@
 prompts:
   outline.system:
-    path: "outline/sys_prompt.st"
-    format: "st"
+    path: 'outline/sys_prompt.st'
+    format: 'st'
+  outline.system.rag:
+    path: 'outline/sys_prompt_rag.st'
+    format: 'st'
   outline.user:
-    path: "outline/usr_prompt.st"
-    format: "st"
+    path: 'outline/usr_prompt.st'
+    format: 'st'
   presentation.system:
-    path: "presentation/sys_prompt.st"
-    format: "st"
+    path: 'presentation/sys_prompt.st'
+    format: 'st'
+  presentation.system.rag:
+    path: 'presentation/sys_prompt_rag.st'
+    format: 'st'
   presentation.user:
-    path: "presentation/usr_prompt.st"
-    format: "st"
+    path: 'presentation/usr_prompt.st'
+    format: 'st'
   image.user:
-    path: "image/usr_prompt.st"
-    format: "st"
+    path: 'image/usr_prompt.st'
+    format: 'st'
   mindmap.system:
-    path: "mindmap/sys_prompt.st"
-    format: "st"
+    path: 'mindmap/sys_prompt.st'
+    format: 'st'
+  mindmap.system.rag:
+    path: 'mindmap/sys_prompt_rag.st'
+    format: 'st'
   mindmap.user:
-    path: "mindmap/usr_prompt.st"
-    format: "st"
+    path: 'mindmap/usr_prompt.st'
+    format: 'st'
   exam.matrix.system:
-    path: "exam/matrix_sys_prompt.st"
-    format: "st"
+    path: 'exam/matrix_sys_prompt.st'
+    format: 'st'
   exam.matrix.user:
-    path: "exam/matrix_usr_prompt.st"
-    format: "st"
+    path: 'exam/matrix_usr_prompt.st'
+    format: 'st'
   exam.questions.system:
-    path: "exam/questions_sys_prompt.st"
-    format: "st"
+    path: 'exam/questions_sys_prompt.st'
+    format: 'st'
   exam.questions.user:
-    path: "exam/questions_usr_prompt.st"
-    format: "st"
+    path: 'exam/questions_usr_prompt.st'
+    format: 'st'
+  exam.matrix.system.rag:
+    path: 'exam/matrix_sys_prompt_rag.st'
+    format: 'st'
   question.system:
-    path: "question/sys_prompt.st"
-    format: "st"
+    path: 'question/sys_prompt.st'
+    format: 'st'
+  question.system.rag:
+    path: 'question/sys_prompt_rag.st'
+    format: 'st'
   question.user:
-    path: "question/usr_prompt.st"
-    format: "st"
+    path: 'question/usr_prompt.st'
+    format: 'st'
   question.context.system:
-    path: "question/sys_prompt_context.st"
-    format: "st"
+    path: 'question/sys_prompt_context.st'
+    format: 'st'
   question.context.user:
-    path: "question/usr_prompt_context.st"
-    format: "st"
+    path: 'question/usr_prompt_context.st'
+    format: 'st'
+  # Subject-grade specific prompts (Math)
+  subject_grade.math.1:
+    path: 'subject_grade/math/grade_1.st'
+    format: 'st'
+  subject_grade.math.2:
+    path: 'subject_grade/math/grade_2.st'
+    format: 'st'
+  subject_grade.math.3:
+    path: 'subject_grade/math/grade_3.st'
+    format: 'st'
+  subject_grade.math.4:
+    path: 'subject_grade/math/grade_4.st'
+    format: 'st'
+  subject_grade.math.5:
+    path: 'subject_grade/math/grade_5.st'
+    format: 'st'
+  # Subject-grade specific prompts (Literature)
+  subject_grade.literature.1:
+    path: 'subject_grade/literature/grade_1.st'
+    format: 'st'
+  subject_grade.literature.2:
+    path: 'subject_grade/literature/grade_2.st'
+    format: 'st'
+  subject_grade.literature.3:
+    path: 'subject_grade/literature/grade_3.st'
+    format: 'st'
+  subject_grade.literature.4:
+    path: 'subject_grade/literature/grade_4.st'
+    format: 'st'
+  subject_grade.literature.5:
+    path: 'subject_grade/literature/grade_5.st'
+    format: 'st'
+  # Subject-grade specific prompts (English)
+  subject_grade.english.1:
+    path: 'subject_grade/english/grade_1.st'
+    format: 'st'
+  subject_grade.english.2:
+    path: 'subject_grade/english/grade_2.st'
+    format: 'st'
+  subject_grade.english.3:
+    path: 'subject_grade/english/grade_3.st'
+    format: 'st'
+  subject_grade.english.4:
+    path: 'subject_grade/english/grade_4.st'
+    format: 'st'
+  subject_grade.english.5:
+    path: 'subject_grade/english/grade_5.st'
+    format: 'st'

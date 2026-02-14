@@ -22,7 +22,7 @@ class LLMExecutor:
             "nano_banana": NanoBananaAdapter,  # Alias for backwards compatibility
         }
 
-    def _adapter(self, provider: str):
+    def _text_adapter(self, provider: str):
         if provider in self.adapters:
             return self.adapters[provider]
 
@@ -37,16 +37,65 @@ class LLMExecutor:
     def batch(
         self, provider: str, model: str, messages, **params
     ) -> Tuple[str, TokenUsage]:
-        adapter_class = self._adapter(provider)
+        adapter_class = self._text_adapter(provider)
         adapter = adapter_class(model_name=model)
         return adapter.run(model=model, messages=messages, **params)
 
     def stream(
         self, provider: str, model: str, messages, **params
     ) -> Tuple[List[str], TokenUsage]:
-        adapter_class = self._adapter(provider)
+        adapter_class = self._text_adapter(provider)
         adapter = adapter_class(model_name=model)
         return adapter.stream(model=model, messages=messages, **params)
+
+    def rag_batch(
+        self,
+        provider: str,
+        model: str,
+        query: str,
+        system_prompt: str,
+        return_source_documents: bool = True,
+        **params,
+    ) -> Tuple[Dict[str, Any], TokenUsage]:
+        adapter_class = self._text_adapter(provider)
+        # Initialize adapter
+        adapter = adapter_class(model_name=model)
+
+        if not hasattr(adapter, "run_rag"):
+            raise NotImplementedError(
+                f"Provider {provider} does not support RAG"
+            )
+
+        return adapter.run_rag(
+            query=query,
+            system_prompt=system_prompt,
+            return_source_documents=return_source_documents,
+            **params,
+        )
+
+    def rag_stream(
+        self,
+        provider: str,
+        model: str,
+        query: str,
+        system_prompt: str,
+        filters: Any = None,
+        **params,
+    ) -> Any:
+        adapter_class = self._text_adapter(provider)
+        adapter = adapter_class(model_name=model)
+
+        if not hasattr(adapter, "stream_rag"):
+            raise NotImplementedError(
+                f"Provider {provider} does not support RAG streaming"
+            )
+
+        return adapter.stream_rag(
+            query=query,
+            system_prompt=system_prompt,
+            filters=filters,
+            **params,
+        )
 
     def generate_image(
         self, provider: str, model: str, message: str, **params

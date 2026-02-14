@@ -1,4 +1,4 @@
-class llm_result_repository:
+class LLMResultRepository:
     @staticmethod
     def save_result(
         prompt: str, response: str, model: str, metadata: dict

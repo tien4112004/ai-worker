@@ -1,4 +1,4 @@
-Create a slide-aligned lesson outline on: **${topic}**.
+Create a slide-aligned lesson outline on: **${topic}** for subject ${subject_name} and grade ${grade}.
 
 Parameters
 - Language: ${language}

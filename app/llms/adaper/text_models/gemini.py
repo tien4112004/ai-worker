@@ -3,12 +3,15 @@ from typing import List, Tuple
 from langchain_core.messages import BaseMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
+from app.llms.adaper.rag_mixins import RAGAdapterMixin
 from app.schemas.token_usage import TokenUsage
 
 
-class GeminiAdapter:
+class GeminiAdapter(RAGAdapterMixin):
     def __init__(self, model_name: str, **params):
         # REQUIRES: GOOGLE_API_KEY in env
+        self.model_name = model_name
+        self.provider = "google"
         self.client = ChatGoogleGenerativeAI(
             model=model_name, **params, convert_system_message_to_human=True
         )

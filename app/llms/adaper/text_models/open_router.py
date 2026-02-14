@@ -5,10 +5,11 @@ from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOpenAI
 from langchain_core.messages import BaseMessage
 
+from app.llms.adaper.rag_mixins import RAGAdapterMixin
 from app.schemas.token_usage import TokenUsage
 
 
-class OpenRouterAdapter:
+class OpenRouterAdapter(RAGAdapterMixin):
     def __init__(self, **params):
         load_dotenv()
 
@@ -32,7 +33,7 @@ class OpenRouterAdapter:
     def run(
         self, model: str, messages: List[BaseMessage], **params
     ) -> Tuple[str, TokenUsage]:
-        resp = self.client.invoke(input=messages, model=model, **params)
+        resp = self.client.invoke(input=messages, **params)
         content = resp.content
 
         if isinstance(content, list):

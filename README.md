@@ -48,6 +48,7 @@ cp .env.sample .env
 For Google VertexAI integration, you need to set up additional environment variables and service account credentials:
 
 1. **Set up service account**:
+
    - Create a service account in Google Cloud Console
    - Download the service account JSON key file
    - Place the file as `service-account.json` in the project root
@@ -91,7 +92,9 @@ pip install -r requirements-test.txt         # Test dependencies
 ```
 
 ## How to run
-****
+
+---
+
 ```bash
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 ```
@@ -114,6 +117,7 @@ This project uses [pip-tools](https://pip-tools.readthedocs.io/) for reproducibl
 #### Common Dependency Tasks
 
 **Add a new dependency:**
+
 ```bash
 # Add to appropriate .in file (e.g., requirements.in for production)
 echo "new-package>=1.0.0" >> requirements.in
@@ -122,28 +126,33 @@ make sync-deps     # Sync environment
 ```
 
 **Update all dependencies:**
+
 ```bash
 make upgrade-deps  # Upgrade to latest compatible versions
 make sync-deps     # Sync environment with new versions
 ```
 
 **Update specific dependency:**
+
 ```bash
 pip-compile --upgrade-package package-name requirements.in
 make sync-deps
 ```
 
 **Sync environment with requirements:**
+
 ```bash
 make sync-deps  # Ensures your environment matches compiled requirements exactly
 ```
 
 **Install development environment:**
+
 ```bash
 make install-dev  # Install dev dependencies only
 ```
 
 **Show outdated packages:**
+
 ```bash
 make show-outdated
 ```
@@ -261,6 +270,7 @@ The project includes several utility scripts and Makefile targets for common dev
 ### Makefile Targets
 
 **Dependency Management:**
+
 ```bash
 make setup           # Complete project setup
 make compile-deps    # Compile .in files to .txt files
@@ -273,6 +283,7 @@ make update-pip-tools # Update pip-tools itself
 ```
 
 **Application:**
+
 ```bash
 make run            # Run the application with uvicorn
 make test           # Run tests
@@ -281,6 +292,7 @@ make clean          # Clean generated files and cache
 ```
 
 **Docker:**
+
 ```bash
 make build          # Build Docker image
 ```
@@ -367,64 +379,72 @@ The CI pipeline automatically:
 - Tests application startup
 
 ## API Manual Testing
+
 ### With curl
+
 #### Generate outline:
+
 - Batch response:
-   ```bash
-   curl -X POST "http://localhost:8080/api/outline/generate"
-      -H "Content-Type: application/json"
-      -d '{
-         "topic": "Introduction to Tắt đèn of Ngô Tất Tố",
-         "slide_count": 5,
-         "model": "gemini-2.5-flash-lite",
-         "language": "vi",
-         "provider": "google"
-      }'
-   ```
+  ```bash
+  curl -X POST "http://localhost:8080/api/outline/generate"
+     -H "Content-Type: application/json"
+     -d '{
+        "topic": "Introduction to Tắt đèn of Ngô Tất Tố",
+        "slide_count": 5,
+        "model": "gemini-2.5-flash-lite",
+        "language": "vi",
+        "provider": "google"
+     }'
+  ```
 - Stream response:
-   ```bash
-   curl -N -X POST "http://localhost:8080/api/outline/generate/stream"
-      -H "Content-Type: application/json"
-      -d '{
-         "topic": "Introduction to Tắt đèn of Ngô Tất Tố",
-         "slide_count": 5,
-         "model": "gemini-2.5-flash-lite",
-         "language": "vi",
-         "provider": "google",
-      }'
-   ```
+  ```bash
+  curl -N -X POST "http://localhost:8080/api/outline/generate/stream"
+     -H "Content-Type: application/json"
+     -d '{
+        "topic": "Introduction to Tắt đèn of Ngô Tất Tố",
+        "slide_count": 5,
+        "model": "gemini-2.5-flash-lite",
+        "language": "vi",
+        "provider": "google",
+     }'
+  ```
+
 #### Presentation generate
+
 - Batch response:
-   ```bash
-   curl -X POST "http://localhost:8080/api/presentation/generate"
-      -H "Content-Type: application/json"
-      -d '{
-            "outline": "```md\n# Introduction to Artificial Intelligence\n• What is AI?\n• Why AI matters in today&apos;s world\n• Overview of presentation goals\n\n# History and Evolution of AI\n• Early concepts and origins (1940s-1950s)\n• The AI winters and revivals\n• Major breakthroughs and milestones\n• Key pioneers and their contributions\n\n# Types and Categories of AI\n• Narrow AI vs General AI\n• Machine Learning fundamentals\n• Deep Learning and Neural Networks\n• Natural Language Processing\n• Computer Vision\n\n# Real-World Applications of AI\n• Healthcare and medical diagnosis\n• Transportation and autonomous vehicles\n• Finance and fraud detection\n• Entertainment and recommendation systems\n• Smart homes and IoT devices\n\n# Future of AI and Emerging Trends\n• Ethical considerations and responsible AI\n• AI governance and regulation\n• Potential societal impacts\n• Career opportunities in AI\n• Preparing for an AI-driven future\n```",
-            "provider": "google",
-            "slide_count": 5,
-            "model": "gemini-2.5-flash-lite",
-            "language": "vi"
-        }'
-   ```
+  ````bash
+  curl -X POST "http://localhost:8080/api/presentation/generate"
+     -H "Content-Type: application/json"
+     -d '{
+           "outline": "```md\n# Introduction to Artificial Intelligence\n• What is AI?\n• Why AI matters in today&apos;s world\n• Overview of presentation goals\n\n# History and Evolution of AI\n• Early concepts and origins (1940s-1950s)\n• The AI winters and revivals\n• Major breakthroughs and milestones\n• Key pioneers and their contributions\n\n# Types and Categories of AI\n• Narrow AI vs General AI\n• Machine Learning fundamentals\n• Deep Learning and Neural Networks\n• Natural Language Processing\n• Computer Vision\n\n# Real-World Applications of AI\n• Healthcare and medical diagnosis\n• Transportation and autonomous vehicles\n• Finance and fraud detection\n• Entertainment and recommendation systems\n• Smart homes and IoT devices\n\n# Future of AI and Emerging Trends\n• Ethical considerations and responsible AI\n• AI governance and regulation\n• Potential societal impacts\n• Career opportunities in AI\n• Preparing for an AI-driven future\n```",
+           "provider": "google",
+           "slide_count": 5,
+           "model": "gemini-2.5-flash-lite",
+           "language": "vi"
+       }'
+  ````
 - Stream response:
-   ```bash
-   curl -N -X POST "http://localhost:8080/api/presentation/generate/stream"
-      -H "Content-Type: application/json"
-      -d '{
-            "outline": "```md\n# Introduction to Artificial Intelligence\n• What is AI?\n• Why AI matters in today&apos;s world\n• Overview of presentation goals\n\n# History and Evolution of AI\n• Early concepts and origins (1940s-1950s)\n• The AI winters and revivals\n• Major breakthroughs and milestones\n• Key pioneers and their contributions\n\n# Types and Categories of AI\n• Narrow AI vs General AI\n• Machine Learning fundamentals\n• Deep Learning and Neural Networks\n• Natural Language Processing\n• Computer Vision\n\n# Real-World Applications of AI\n• Healthcare and medical diagnosis\n• Transportation and autonomous vehicles\n• Finance and fraud detection\n• Entertainment and recommendation systems\n• Smart homes and IoT devices\n\n# Future of AI and Emerging Trends\n• Ethical considerations and responsible AI\n• AI governance and regulation\n• Potential societal impacts\n• Career opportunities in AI\n• Preparing for an AI-driven future\n```",
-            "provider": "google",
-            "slide_count": 5,
-            "model": "gemini-2.5-flash-lite",
-            "language": "vi"
-        }'
-   ```
+  ````bash
+  curl -N -X POST "http://localhost:8080/api/presentation/generate/stream"
+     -H "Content-Type: application/json"
+     -d '{
+           "outline": "```md\n# Introduction to Artificial Intelligence\n• What is AI?\n• Why AI matters in today&apos;s world\n• Overview of presentation goals\n\n# History and Evolution of AI\n• Early concepts and origins (1940s-1950s)\n• The AI winters and revivals\n• Major breakthroughs and milestones\n• Key pioneers and their contributions\n\n# Types and Categories of AI\n• Narrow AI vs General AI\n• Machine Learning fundamentals\n• Deep Learning and Neural Networks\n• Natural Language Processing\n• Computer Vision\n\n# Real-World Applications of AI\n• Healthcare and medical diagnosis\n• Transportation and autonomous vehicles\n• Finance and fraud detection\n• Entertainment and recommendation systems\n• Smart homes and IoT devices\n\n# Future of AI and Emerging Trends\n• Ethical considerations and responsible AI\n• AI governance and regulation\n• Potential societal impacts\n• Career opportunities in AI\n• Preparing for an AI-driven future\n```",
+           "provider": "google",
+           "slide_count": 5,
+           "model": "gemini-2.5-flash-lite",
+           "language": "vi"
+       }'
+  ````
+
 ### With web UI
+
 - First, `cd web_test_api` folder
 - Then run:
-   ```bash
-     python3 -m http.server 3000
-   ```
+  ```bash
+    python3 -m http.server 3000
+  ```
 - Access to `localhost:3000` in your browser
+
 ### Image Generation API
 
 Generate images based on text descriptions. The API returns a base64-encoded image that can be displayed in a web application:
@@ -449,7 +469,7 @@ The response will be just the base64-encoded image data (without any mime prefix
 
 ```json
 {
-  "base64_image": "iVBORw0KGgoAAAANSUhEUgAA..."
+	"base64_image": "iVBORw0KGgoAAAANSUhEUgAA..."
 }
 ```
 

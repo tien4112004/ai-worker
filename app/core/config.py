@@ -56,6 +56,14 @@ class Settings(BaseSettings):
     database_user: str = os.getenv("DATABASE_USER", "postgres")
     database_password: str = os.getenv("DATABASE_PASSWORD", "postgres")
 
+    # Vector Database Configuration (PGVector)
+    pg_connection_string: str = os.getenv(
+        "PG_CONNECTION_STRING",
+        "postgresql+psycopg2://postgres:postgres@localhost:5432/datn_monolith_db",
+    )
+    collection_name: str = os.getenv("COLLECTION_NAME", "document_embeddings")
+    embedding_model: str = os.getenv("EMBEDDING_MODEL", "text-embedding-004")
+
     # LocalAI Configuration
     localai_base_url: str = os.getenv(
         "LOCALAI_BASE_URL", "http://localhost:8083"
@@ -71,6 +79,7 @@ class Settings(BaseSettings):
         "PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces"
     )
     phoenix_project_name: str = os.getenv("PHOENIX_PROJECT_NAME", "")
+    phoenix_api_key: str = os.getenv("PHOENIX_API_KEY", "")
 
 
 logging.basicConfig(

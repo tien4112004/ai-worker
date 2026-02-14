@@ -43,10 +43,26 @@ psycopg2-binary>=2.9.9  # PostgreSQL adapter
 GitPython>=3.1.45
 Jinja2>=3.1.6
 
-sse-starlette==3.0.2
+# Vector Database & RAG
+langchain>=1.2.0
+psycopg2-binary>=2.9.9
+pgvector>=0.2.5
+langchain-postgres>=0.0.12
+
+# Document Loaders
+pypdf>=4.0.0
+python-docx>=1.1.0
+markdown>=3.5.0
+llama-cloud>=0.1.5
+llama-index-core>=0.12.0
+
+sse-starlette==3.0.2    # via langsmith
 
 # Observability
 arize-phoenix>=4.29.0
 deprecated>=1.2.14
 openinference-instrumentation-langchain>=0.1.56
 openinference-instrumentation-google-genai>=0.1.8
+
+# Dependency Injector
+dependency-injector>=4.48.0

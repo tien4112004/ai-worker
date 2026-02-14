@@ -3,6 +3,13 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+# Subject code to name mapping
+SUBJECT_NAME_MAP = {
+    "T": "Math",
+    "TV": "Vietnamese",
+    "TA": "English",
+}
+
 
 # Request and Response models for outline generation
 class OutlineGenerateRequest(BaseModel):
@@ -13,8 +20,8 @@ class OutlineGenerateRequest(BaseModel):
     slide_count: int = Field(
         ..., description="The number of slides to generate"
     )
-    grade: Optional[str] = Field(
-        None, max_length=50, description="The grade level for the content"
+    grade: Optional[int] = Field(
+        None, description="The grade level for the content"
     )
     subject: Optional[str] = Field(
         None, max_length=100, description="The subject area for the content"
@@ -32,6 +39,9 @@ class OutlineGenerateRequest(BaseModel):
             result["grade"] = self.grade
         if self.subject:
             result["subject"] = self.subject
+            result["subject_name"] = SUBJECT_NAME_MAP.get(
+                self.subject, self.subject
+            )
         return result
 
 
@@ -47,8 +57,8 @@ class PresentationGenerateRequest(BaseModel):
     meta_data: dict | None = Field(
         None, description="Additional metadata for the presentation"
     )
-    grade: Optional[str] = Field(
-        None, max_length=50, description="The grade level for the content"
+    grade: Optional[int] = Field(
+        None, description="The grade level for the content"
     )
     subject: Optional[str] = Field(
         None, max_length=100, description="The subject area for the content"
@@ -67,4 +77,7 @@ class PresentationGenerateRequest(BaseModel):
             result["grade"] = self.grade
         if self.subject:
             result["subject"] = self.subject
+            result["subject_name"] = SUBJECT_NAME_MAP.get(
+                self.subject, self.subject
+            )
         return result

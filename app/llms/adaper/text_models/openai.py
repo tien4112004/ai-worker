@@ -3,12 +3,15 @@ from typing import List, Tuple
 from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 
+from app.llms.adaper.rag_mixins import RAGAdapterMixin
 from app.schemas.token_usage import TokenUsage
 
 
-class OpenAIAdapter:
+class OpenAIAdapter(RAGAdapterMixin):
     def __init__(self, model_name: str, **params):
         # REQUIRES: OPENAI_API_KEY in env
+        self.model_name = model_name
+        self.provider = "openai"
         self.client = ChatOpenAI(model=model_name, **params)
 
     def run(
