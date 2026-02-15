@@ -60,6 +60,62 @@ class ExpandCombinedTextRequest(BaseModel):
     provider: str = Field(..., description="The provider of the model")
 
 
+# Mindmap-specific schemas
+class TreeContext(BaseModel):
+    mindmapId: Optional[str] = None
+    rootNodeId: Optional[str] = None
+    currentLevel: Optional[int] = None
+    parentContent: Optional[str] = None
+    siblingContents: Optional[List[str]] = None
+    # Enhanced context for better AI responses
+    mindmapTitle: Optional[str] = None
+    rootNodeContent: Optional[str] = None
+    fullAncestryPath: Optional[List[str]] = (
+        None  # Ordered from root to immediate parent
+    )
+
+
+class RefineNodeRequest(BaseModel):
+    nodeId: str
+    currentContent: str
+    instruction: str
+    operation: Optional[str] = None  # "expand", "shorten", "grammar", "formal"
+    context: Optional[TreeContext] = None
+    model: str = Field(..., description="The model to use for modification")
+    provider: str = Field(..., description="The provider of the model")
+
+
+class ExpandNodeRequest(BaseModel):
+    nodeId: str
+    nodeContent: str
+    maxChildren: int = Field(
+        default=5, description="Maximum number of children to generate"
+    )
+    maxDepth: int = Field(
+        default=2, description="Maximum depth for generated subtree"
+    )
+    context: Optional[TreeContext] = (
+        None  # Tree context for generating relevant children
+    )
+    model: str = Field(..., description="The model to use for generation")
+    provider: str = Field(..., description="The provider of the model")
+
+
+class NodeContentItem(BaseModel):
+    nodeId: str
+    content: str
+    level: int
+
+
+class RefineBranchRequest(BaseModel):
+    nodes: List[NodeContentItem]
+    instruction: str
+    operation: Optional[str] = None  # "expand", "shorten", "grammar", "formal"
+    context: Optional[TreeContext] = None
+    model: str = Field(..., description="The model to use for modification")
+    provider: str = Field(..., description="The provider of the model")
+
+
 # Generic Response Wrapper
 class AIModificationResponse(BaseModel):
     success: bool

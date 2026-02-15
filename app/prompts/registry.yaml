@@ -85,6 +85,33 @@ prompts:
   modification.combined_text.expand:
     path: "modification/combined_text/expand_combined_text.st"
     format: "st"
+
+  # Mindmap node operations
+  modification.mindmap.expand:
+    path: "modification/mindmap/expand_node.st"
+    format: "st"
+  modification.mindmap.shorten:
+    path: "modification/mindmap/shorten_node.st"
+    format: "st"
+  modification.mindmap.grammar:
+    path: "modification/mindmap/grammar_node.st"
+    format: "st"
+  modification.mindmap.formal:
+    path: "modification/mindmap/formal_node.st"
+    format: "st"
+  modification.mindmap.expand_branch:
+    path: "modification/mindmap/expand_branch.st"
+    format: "st"
+  modification.mindmap.shorten_branch:
+    path: "modification/mindmap/shorten_branch.st"
+    format: "st"
+  modification.mindmap.grammar_branch:
+    path: "modification/mindmap/grammar_branch.st"
+    format: "st"
+  modification.mindmap.formal_branch:
+    path: "modification/mindmap/formal_branch.st"
+    format: "st"
+
   exam.matrix.system:
     path: "exam/matrix_sys_prompt.st"
     format: "st"
