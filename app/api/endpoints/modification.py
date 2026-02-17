@@ -7,8 +7,11 @@ from app.prompts.loader import PromptStore
 from app.schemas.modification import (
     AIModificationResponse,
     ExpandCombinedTextRequest,
+    ExpandNodeRequest,
+    RefineBranchRequest,
     RefineContentRequest,
     RefineElementTextRequest,
+    RefineNodeRequest,
     ReplaceElementImageRequest,
     TransformLayoutRequest,
 )
@@ -75,4 +78,35 @@ async def refine_combined_text(
     service: ModificationService = Depends(get_service),
 ):
     result = service.expand_combined_text(request)
+    return AIModificationResponse(success=True, data=result)
+
+
+# Mindmap modification endpoints
+@router.post("/mindmap/refine-node", response_model=AIModificationResponse)
+async def refine_mindmap_node(
+    request: RefineNodeRequest,
+    service: ModificationService = Depends(get_service),
+):
+    """Refine a mindmap node's content (expand, shorten, fix grammar, formalize)."""
+    result = service.refine_mindmap_node(request)
+    return AIModificationResponse(success=True, data=result)
+
+
+@router.post("/mindmap/expand-node", response_model=AIModificationResponse)
+async def expand_mindmap_node(
+    request: ExpandNodeRequest,
+    service: ModificationService = Depends(get_service),
+):
+    """Generate child nodes for a mindmap node with AI."""
+    result = service.expand_mindmap_node(request)
+    return AIModificationResponse(success=True, data=result)
+
+
+@router.post("/mindmap/refine-branch", response_model=AIModificationResponse)
+async def refine_mindmap_branch(
+    request: RefineBranchRequest,
+    service: ModificationService = Depends(get_service),
+):
+    """Refine multiple nodes in a mindmap branch together."""
+    result = service.refine_mindmap_branch(request)
     return AIModificationResponse(success=True, data=result)

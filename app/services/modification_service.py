@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Dict, Optional
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from openai import APIError as OpenAIAPIError
 from openai import (
     AuthenticationError,
@@ -19,8 +19,11 @@ from app.llms.executor import LLMExecutor
 from app.prompts.loader import PromptStore
 from app.schemas.modification import (
     ExpandCombinedTextRequest,
+    ExpandNodeRequest,
+    RefineBranchRequest,
     RefineContentRequest,
     RefineElementTextRequest,
+    RefineNodeRequest,
     TransformLayoutRequest,
 )
 
@@ -256,3 +259,294 @@ class ModificationService:
         except Exception as e:
             logger.exception("Unexpected error in refine_combined_text")
             raise AIServiceError(f"Failed to refine combined text: {str(e)}")
+
+    def refine_mindmap_node(
+        self, request: RefineNodeRequest
+    ) -> Dict[str, Any]:
+        """Refine a mindmap node's content (expand, shorten, fix grammar, formalize)."""
+        try:
+            # Build tree context information
+            tree_context = ""
+            if request.context:
+                # Main mindmap topic
+                if request.context.mindmapTitle:
+                    tree_context += (
+                        f"Mindmap Topic: {request.context.mindmapTitle}. "
+                    )
+
+                # Educational metadata
+                if request.context.grade:
+                    tree_context += f"Grade Level: {request.context.grade}. "
+                if request.context.subject:
+                    tree_context += f"Subject: {request.context.subject}. "
+
+                # Hierarchy context
+                if request.context.rootNodeContent:
+                    tree_context += (
+                        f"Root Concept: {request.context.rootNodeContent}. "
+                    )
+
+                if (
+                    request.context.fullAncestryPath
+                    and len(request.context.fullAncestryPath) > 0
+                ):
+                    ancestry = " → ".join(request.context.fullAncestryPath)
+                    tree_context += f"Hierarchy Path: {ancestry}. "
+
+                if request.context.parentContent:
+                    tree_context += (
+                        f"Parent Concept: {request.context.parentContent}. "
+                    )
+
+                # Sibling context for consistency
+                if (
+                    request.context.siblingContents
+                    and len(request.context.siblingContents) > 0
+                ):
+                    siblings = ", ".join(
+                        request.context.siblingContents[:8]
+                    )  # Limit to 8
+                    tree_context += f"Related Sibling Concepts: {siblings}. "
+
+            # Determine which prompt to use based on operation
+            operation = self._get_operation(
+                request.instruction, request.operation
+            )
+            prompt_key = f"modification.mindmap.{operation}"
+
+            # Prepare grade level text for prompt
+            grade_level = ""
+            if request.context and request.context.grade:
+                grade_level = f" for {request.context.grade}"
+
+            prompt = self._render(
+                prompt_key,
+                {
+                    "current_content": request.currentContent,
+                    "tree_context": tree_context,
+                    "instruction": request.instruction,
+                    "grade_level": grade_level,
+                },
+            )
+
+            text, usage = self.llm_executor.batch(
+                provider=request.provider,
+                model=request.model,
+                messages=[HumanMessage(content=prompt)],
+            )
+            logger.info(
+                "refine_mindmap_node tokens: %s",
+                usage.total_tokens if usage else "N/A",
+            )
+
+            return {"refinedContent": text.strip()}
+        except AuthenticationError as e:
+            raise AIAuthenticationError(
+                f"AI service authentication failed: {str(e)}"
+            )
+        except RateLimitError as e:
+            raise AIRateLimitError(f"OpenAI rate limit exceeded: {str(e)}")
+        except OpenAIAPIError as e:
+            raise AIServiceError(f"OpenAI API error: {str(e)}")
+        except Exception as e:
+            logger.exception("Unexpected error in refine_mindmap_node")
+            raise AIServiceError(f"Failed to refine mindmap node: {str(e)}")
+
+    def expand_mindmap_node(
+        self, request: ExpandNodeRequest
+    ) -> Dict[str, Any]:
+        """Generate child nodes for a mindmap node with AI."""
+        try:
+            # Build tree context information
+            tree_context = ""
+            if request.context:
+                # Main mindmap topic
+                if request.context.mindmapTitle:
+                    tree_context += (
+                        f"Mindmap Topic: {request.context.mindmapTitle}. "
+                    )
+
+                # Hierarchy context
+                if request.context.rootNodeContent:
+                    tree_context += (
+                        f"Root Concept: {request.context.rootNodeContent}. "
+                    )
+
+                if (
+                    request.context.fullAncestryPath
+                    and len(request.context.fullAncestryPath) > 0
+                ):
+                    ancestry = " → ".join(request.context.fullAncestryPath)
+                    tree_context += f"Hierarchy Path: {ancestry}. "
+
+                if request.context.parentContent:
+                    tree_context += (
+                        f"Parent Concept: {request.context.parentContent}. "
+                    )
+
+                # Sibling context for consistency
+                if (
+                    request.context.siblingContents
+                    and len(request.context.siblingContents) > 0
+                ):
+                    siblings = ", ".join(
+                        request.context.siblingContents[:8]
+                    )  # Limit to 8
+                    tree_context += f"Related Sibling Concepts: {siblings}. "
+
+                tree_context += (
+                    f"Current Level: {request.context.currentLevel}. "
+                )
+
+            # Render system prompt that defines the JSON structure
+            system_prompt = self._render(
+                "mindmap.system",
+                {
+                    "maxDepth": str(request.maxDepth),
+                    "maxBranchesPerNode": str(request.maxChildren),
+                },
+            )
+
+            # Render user prompt with tree context
+            user_prompt = self._render(
+                "mindmap.user",
+                {
+                    "topic": request.nodeContent,
+                    "tree_context": tree_context,
+                    "maxDepth": str(request.maxDepth),
+                    "maxBranchesPerNode": str(request.maxChildren),
+                    "language": "",  # Empty - AI will auto-detect from content
+                    "grade": "",  # Empty - not used
+                    "subject": "",  # Empty - not used
+                },
+            )
+
+            # Call LLM with BOTH system and user prompts
+            text, usage = self.llm_executor.batch(
+                provider=request.provider,
+                model=request.model,
+                messages=[
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=user_prompt),
+                ],
+            )
+            logger.info(
+                "expand_mindmap_node tokens: %s",
+                usage.total_tokens if usage else "N/A",
+            )
+
+            # Parse the hierarchical children structure
+            parsed = self._extract_json(text)
+            return {"children": parsed.get("children", [])}
+        except AuthenticationError as e:
+            raise AIAuthenticationError(
+                f"AI service authentication failed: {str(e)}"
+            )
+        except RateLimitError as e:
+            raise AIRateLimitError(f"OpenAI rate limit exceeded: {str(e)}")
+        except OpenAIAPIError as e:
+            raise AIServiceError(f"OpenAI API error: {str(e)}")
+        except Exception as e:
+            logger.exception("Unexpected error in expand_mindmap_node")
+            raise AIServiceError(f"Failed to expand mindmap node: {str(e)}")
+
+    def refine_mindmap_branch(
+        self, request: RefineBranchRequest
+    ) -> Dict[str, Any]:
+        """Refine multiple nodes in a mindmap branch together."""
+        try:
+            # Build tree context information
+            tree_context = ""
+            if request.context:
+                # Main mindmap topic
+                if request.context.mindmapTitle:
+                    tree_context += (
+                        f"Mindmap Topic: {request.context.mindmapTitle}. "
+                    )
+
+                # Educational metadata
+                if request.context.grade:
+                    tree_context += f"Grade Level: {request.context.grade}. "
+                if request.context.subject:
+                    tree_context += f"Subject: {request.context.subject}. "
+
+                # Hierarchy context
+                if request.context.rootNodeContent:
+                    tree_context += (
+                        f"Root Concept: {request.context.rootNodeContent}. "
+                    )
+
+                if (
+                    request.context.fullAncestryPath
+                    and len(request.context.fullAncestryPath) > 0
+                ):
+                    ancestry = " → ".join(request.context.fullAncestryPath)
+                    tree_context += f"Hierarchy Path: {ancestry}. "
+
+                if request.context.parentContent:
+                    tree_context += (
+                        f"Parent Concept: {request.context.parentContent}. "
+                    )
+
+                tree_context += (
+                    f"Current Level: {request.context.currentLevel}. "
+                )
+
+            # Convert nodes to JSON for the prompt
+            nodes_json = json.dumps(
+                [
+                    {
+                        "nodeId": n.nodeId,
+                        "content": n.content,
+                        "level": n.level,
+                    }
+                    for n in request.nodes
+                ],
+                ensure_ascii=False,
+            )
+
+            # Determine which prompt to use based on operation
+            operation = self._get_operation(
+                request.instruction, request.operation
+            )
+            prompt_key = f"modification.mindmap.{operation}_branch"
+
+            # Prepare grade level text for prompt
+            grade_level = ""
+            if request.context and request.context.grade:
+                grade_level = f" for {request.context.grade}"
+
+            prompt = self._render(
+                prompt_key,
+                {
+                    "nodes_json": nodes_json,
+                    "tree_context": tree_context,
+                    "instruction": request.instruction,
+                    "grade_level": grade_level,
+                },
+            )
+
+            text, usage = self.llm_executor.batch(
+                provider=request.provider,
+                model=request.model,
+                messages=[HumanMessage(content=prompt)],
+            )
+            logger.info(
+                "refine_mindmap_branch tokens: %s",
+                usage.total_tokens if usage else "N/A",
+            )
+
+            # Parse refined nodes from response
+            parsed = self._extract_json(text)
+            return {"refinedNodes": parsed}
+        except AuthenticationError as e:
+            raise AIAuthenticationError(
+                f"AI service authentication failed: {str(e)}"
+            )
+        except RateLimitError as e:
+            raise AIRateLimitError(f"OpenAI rate limit exceeded: {str(e)}")
+        except OpenAIAPIError as e:
+            raise AIServiceError(f"OpenAI API error: {str(e)}")
+        except Exception as e:
+            logger.exception("Unexpected error in refine_mindmap_branch")
+            raise AIServiceError(f"Failed to refine mindmap branch: {str(e)}")
