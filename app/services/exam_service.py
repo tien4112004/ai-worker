@@ -122,6 +122,7 @@ class ExamService:
                     DimensionTopic(
                         name=t.get("name", "Unknown Topic"),
                         subtopics=subtopics,
+                        hasContext=t.get("hasContext", False),
                     )
                 )
 
@@ -258,7 +259,7 @@ class ExamService:
         try:
             result_text = self._extract_json(result)
             logger.info(
-                f"[EXAM_SERVICE] Successfully generated questions, returning raw response to backend"
+                "[EXAM_SERVICE] Successfully generated questions, returning raw response to backend"
             )
 
             # Return raw JSON string for backend to parse
