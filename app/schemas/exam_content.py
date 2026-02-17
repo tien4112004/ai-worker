@@ -77,6 +77,10 @@ class DimensionTopic(BaseModel):
     subtopics: List[DimensionSubtopic] = Field(
         ..., description="List of subtopics under this topic"
     )
+    hasContext: Optional[bool] = Field(
+        default=False,
+        description="If true, system randomly selects a context for context-based questions",
+    )
 
 
 class MatrixDimensions(BaseModel):

@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from app.schemas.exam_content import (
+    DimensionSubtopic,
     DimensionTopic,
     ExamMatrix,
     GenerateMatrixRequest,
@@ -90,8 +91,15 @@ class ExamRagService(BaseRagService):
             dims_data = matrix_data.get("dimensions", {})
             topics = [
                 DimensionTopic(
-                    id=t.get("id", str(uuid.uuid4())),
                     name=t.get("name", "Unknown"),
+                    subtopics=[
+                        DimensionSubtopic(
+                            id=st.get("id", str(uuid.uuid4())),
+                            name=st.get("name", "Unknown"),
+                        )
+                        for st in t.get("subtopics", [])
+                    ],
+                    hasContext=t.get("hasContext", False),
                 )
                 for t in dims_data.get("topics", [])
             ]
