@@ -441,6 +441,13 @@ class QuestionGenerationStatus(BaseModel):
     error: Optional[str] = None
 
 
+class QuestionRequirement(BaseModel):
+    """Requirement for a specific difficulty and question type."""
+
+    count: int = Field(..., ge=1, description="Number of questions")
+    points: float = Field(..., ge=0, description="Points per question")
+
+
 class GenerateQuestionsFromTopicRequest(BaseModel):
     """Request to generate questions from a topic."""
 
@@ -483,10 +490,6 @@ class GenerateQuestionsFromContextRequest(BaseModel):
         ..., description="Type of context provided"
     )
 
-    # Metadata and objectives
-    objectives: List[str] = Field(
-        ..., description="Learning objectives or goals for the questions"
-    )
     grade: Literal["K", "1", "2", "3", "4", "5"]
     subject: str = Field(..., description="Subject code: T, TV, TA")
 
@@ -494,16 +497,21 @@ class GenerateQuestionsFromContextRequest(BaseModel):
         Literal[
             "KNOWLEDGE", "COMPREHENSION", "APPLICATION", "ADVANCED_APPLICATION"
         ],
-        int,
-    ] = Field(..., description="Number of questions for each difficulty level")
-
-    question_types: List[
-        Literal["MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"]
-    ] = Field(..., description="Types of questions to generate")
+        Dict[
+            Literal[
+                "MULTIPLE_CHOICE", "FILL_IN_BLANK", "MATCHING", "OPEN_ENDED"
+            ],
+            QuestionRequirement,
+        ],
+    ] = Field(
+        ...,
+        alias="questionsPerDifficulty",
+        description="Map of difficulty -> question_type -> requirement (count and points)",
+    )
 
     prompt: Optional[str] = Field(
         None,
-        description="Additional requirements or context for question generation",
+        description="User guidelines for question generation",
     )
 
     # LLM configuration
@@ -513,6 +521,9 @@ class GenerateQuestionsFromContextRequest(BaseModel):
     model: Optional[str] = Field(
         default="gemini-2.5-flash", description="LLM model"
     )
+
+    class Config:
+        populate_by_name = True
 
 
 # ============================================================================
@@ -538,13 +549,6 @@ class ContextInfo(BaseModel):
     context_title: Optional[str] = Field(
         None, description="Title of the context"
     )
-
-
-class QuestionRequirement(BaseModel):
-    """Requirement for a specific difficulty and question type."""
-
-    count: int = Field(..., ge=1, description="Number of questions")
-    points: float = Field(..., ge=0, description="Points per question")
 
 
 class TopicRequirement(BaseModel):

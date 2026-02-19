@@ -9,6 +9,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.core.fastapi_depends import ContentServiceDep, ExamServiceDep
 from app.schemas.exam_content import (
+    GenerateQuestionsFromContextRequest,
     GenerateQuestionsFromTopicRequest,
     Question,
 )
@@ -247,6 +248,46 @@ def generateMindmap_Mock(
     print("Received mock mindmap generation request:", mindmapGenerateRequest)
     result, token_usage = svc.generate_mindmap_mock(mindmapGenerateRequest)
     return GenerateResponse(data=result, token_usage=token_usage)
+
+
+@router.post("/questions/generate-from-context", response_model=list[Question])
+def generate_questions_from_context(
+    request: GenerateQuestionsFromContextRequest, svc: ExamServiceDep
+):
+    """
+    Generate questions from a specific context (reading passage or image).
+    """
+    logger.info(
+        f"[QUESTIONS/GENERATE-FROM-CONTEXT] Received request, context_type: {request.context_type}, grade: {request.grade}"
+    )
+
+    try:
+        result = svc.generate_questions_from_context(request)
+        logger.info(
+            f"[QUESTIONS/GENERATE-FROM-CONTEXT] Successfully generated {len(result)} questions"
+        )
+        return result
+    except ValueError as e:
+        logger.error(
+            f"[QUESTIONS/GENERATE-FROM-CONTEXT] Validation error: {str(e)}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+    except FileNotFoundError as e:
+        logger.error(
+            f"[QUESTIONS/GENERATE-FROM-CONTEXT] File not found: {str(e)}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Prompt template not found: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"[QUESTIONS/GENERATE-FROM-CONTEXT] Error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate questions: {str(e)}",
+        )
 
 
 @router.post("/questions/generate", response_model=list[Question])
