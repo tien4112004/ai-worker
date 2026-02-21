@@ -700,20 +700,29 @@ class ExamService:
             f"[EXAM_SERVICE] Generating questions from context for grade: {request.grade}"
         )
 
-        # Calculate total questions
-        total_questions = sum(request.questions_per_difficulty.values())
+        # Derive distributions from structured QuestionRequirement objects
+        total_questions = 0
+        difficulty_lines = []
+        question_types_set = set()
+
+        for difficulty, type_map in request.questions_per_difficulty.items():
+            diff_count = 0
+            for q_type, req in type_map.items():
+                count = req.count
+                if count > 0:
+                    diff_count += count
+                    question_types_set.add(q_type)
+            if diff_count > 0:
+                difficulty_lines.append(
+                    f"  - {difficulty}: {diff_count} questions"
+                )
+                total_questions += diff_count
 
         if total_questions == 0:
             raise ValueError("Total questions must be greater than 0")
 
         # Format difficulty distribution
-        difficulty_distribution = "\n".join(
-            [
-                f"  - {difficulty}: {count} questions"
-                for difficulty, count in request.questions_per_difficulty.items()
-                if count > 0
-            ]
-        )
+        difficulty_distribution = "\n".join(difficulty_lines)
 
         # Map subject codes to names
         subject_map = {
@@ -725,16 +734,18 @@ class ExamService:
         if not subject_name:
             raise ValueError(f"Unknown subject code: {request.subject}")
 
-        # Format question types
-        question_types_str = ", ".join(request.question_types)
+        # Derive question types from the map keys
+        question_types_str = ", ".join(sorted(question_types_set))
 
-        # Format objectives
-        objectives_str = "\n".join([f"- {obj}" for obj in request.objectives])
+        # Format user guidelines as objectives string
+        objectives_str = (
+            f"- {request.prompt}"
+            if request.prompt
+            else "- Generate questions relevant to the context"
+        )
 
-        # Format additional requirements
+        # Format additional requirements (empty since prompt is already used as objectives)
         additional_req = ""
-        if request.prompt:
-            additional_req = f"\n**Additional Requirements**: {request.prompt}"
 
         # Build prompt variables
         prompt_vars = {
@@ -752,7 +763,7 @@ class ExamService:
         sys_msg_content = self._system("question.context.system", prompt_vars)
         usr_msg_content = self._system("question.context.user", prompt_vars)
 
-        messages = [BaseMessage(content=sys_msg_content)]
+        messages = [SystemMessage(content=sys_msg_content)]
 
         if request.context_type == "IMAGE":
             # For image, we need to construct a multipart message
